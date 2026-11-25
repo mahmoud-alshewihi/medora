@@ -172,9 +172,10 @@ test("owner receives stock and sees it in the table", async ({ page }) => {
 test("prescription prints for the patient who owns it and is hidden from others", async ({ page, browser }) => {
   const { PrismaClient } = await import("@prisma/client");
   const db = new PrismaClient();
-  const rx = await db.prescription.findFirstOrThrow({ where: { patient: { userId: { not: null } } } });
-  const pat = await db.patient.findUniqueOrThrow({ where: { id: rx.patientId } });
-  const usr = await db.user.findUniqueOrThrow({ where: { id: pat.userId! } });
+  const usr = await db.user.findUniqueOrThrow({ where: { email: "patient@nile.medora.test" } });
+  const pat = await db.patient.findFirstOrThrow({ where: { userId: usr.id } });
+  const cons = await db.consultation.findFirstOrThrow({ where: { patientId: pat.id } });
+  const rx = await db.prescription.create({ data: { clinicId: cons.clinicId, consultationId: cons.id, patientId: pat.id, doctorId: cons.doctorId, number: "RX-E2E-" + Date.now(), items: { create: [{ medication: "Paracetamol", dosage: "500 mg", frequency: "Twice daily", duration: "3 days" }] } } });
   await db.$disconnect();
   await login(page, usr.email);
   await page.waitForURL(/\/portal/);
@@ -185,4 +186,22 @@ test("prescription prints for the patient who owns it and is hidden from others"
   const r = await p2.goto(`/print/prescription/${rx.id}`);
   expect(p2.url()).toContain("/login"); expect(r?.status()).toBeLessThan(400);
   await other.close();
+});
+
+test("notification centre lists and marks read", async ({ page }) => {
+  await login(page, "owner@nile.medora.test");
+  await page.waitForURL(/\/admin/);
+  await page.goto("/notifications");
+  await expect(page.getByRole("heading", { name: "Notifications" })).toBeVisible();
+  await page.getByRole("button", { name: "Mark all as read" }).click({ trial: false }).catch(() => undefined);
+  await expect(page.getByText("0 unread")).toBeVisible();
+});
+
+test("Arabic locale translates navigation and page titles", async ({ page, context }) => {
+  await context.addCookies([{ name: "locale", value: "ar", url: "http://localhost:3000" }]);
+  await login(page, "owner@nile.medora.test");
+  await page.waitForURL(/\/admin/);
+  await page.goto("/admin/patients");
+  await expect(page.getByRole("heading", { name: "المرضى" })).toBeVisible();
+  await expect(page.locator("html")).toHaveAttribute("dir", "rtl");
 });

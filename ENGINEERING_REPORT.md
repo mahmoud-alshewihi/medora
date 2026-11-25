@@ -9,7 +9,7 @@ Honest status. Everything under "Verified" was actually run in the build sandbox
 - `npm run build` (next build): succeeds.
 - Migrations apply; seed runs: 3 clinics, 7 branches, 20 doctors, 36 staff, 500 patients, 1000 appointments, 639 invoices, 538 payments. Seed data is generated demo data, labelled as such.
 - Smoke test against the production server: login works; role redirects verified (owner -> /admin, doctor blocked from /admin, patient -> /portal, super admin -> /platform and blocked from tenant pages, reception -> /reception).
-- Playwright e2e: 13 tests pass (calendar views, stock receive, prescription print access, portal booking and cancelling by a patient, refund via UI, public pages, dashboard/patients, role redirect, record payment, add expense, add staff + save settings, reports page, and a doctor consultation: start, save notes, prescribe, complete, with the invoice and prescription confirmed in the DB) using the sandbox's Chrome.
+- Playwright e2e: 15 tests pass (notification centre, Arabic titles/nav, calendar views, stock receive, prescription print access, portal booking and cancelling by a patient, refund via UI, public pages, dashboard/patients, role redirect, record payment, add expense, add staff + save settings, reports page, and a doctor consultation: start, save notes, prescribe, complete, with the invoice and prescription confirmed in the DB) using the sandbox's Chrome.
 - Bug found by tests and fixed: code inside a Prisma transaction used the global client and starved the connection pool under concurrent booking.
 
 ## Built
@@ -30,3 +30,9 @@ The e2e tests change the dev database (payments, expenses, staff, consultations,
 
 ## Design pass (M10)
 Fixed the page font (it rendered in a serif fallback), added a nav with icons and an active state, stacked form labels above inputs, clinic-timezone times instead of UTC, patient names on invoices, status badges, a day/week/month appointment calendar, and a printable prescription page. Checked visually from screenshots of: dashboard, patients, billing, appointments (week, month), inventory, patient portal, booking wizard, landing page. Not visually checked: dark mode after this pass, Arabic/RTL layout after this pass, mobile widths.
+
+## M11 additions (verified this run)
+- Notification centre (/notifications), Arabic page titles and table headers (phrase map), mobile header fix, dark-mode chart colour.
+- Sign-in rate limit is configurable (AUTH_SIGNIN_MAX, default 10/min); e2e sets 200 because the suite logs in many times. An earlier e2e failure was this limit, not a stock bug.
+- Run results: tsc clean; eslint 0 errors, 2 warnings (unused import); vitest 76/76; Playwright 15/15.
+- Still not done: doctor-creation form, patient edit/import UI, portal reschedule, cash-close UI, purchase-order UI, Arabic on authenticated form labels/badges, Docker/compose/CI untested.

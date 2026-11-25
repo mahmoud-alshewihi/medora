@@ -31,7 +31,7 @@ export const auth = betterAuth({
   user: { additionalFields: { status: { type: "string", required: false, input: false }, locale: { type: "string", required: false } } },
   session: { expiresIn: 60 * 60 * 24 * 7, updateAge: 60 * 60 * 24, cookieCache: { enabled: false } },
   advanced: { useSecureCookies: env().NODE_ENV === "production", defaultCookieAttributes: { httpOnly: true, sameSite: "lax" } },
-  rateLimit: { enabled: true, window: 60, max: 30, customRules: { "/sign-in/email": { window: 60, max: 10 } } },
+  rateLimit: { enabled: true, window: 60, max: 30, customRules: { "/sign-in/email": { window: 60, max: Number(process.env.AUTH_SIGNIN_MAX ?? 10) } } },
   databaseHooks: {
     session: {
       create: {

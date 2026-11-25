@@ -1,3 +1,4 @@
+import { PageTitle } from "@/components/shell/page-title";
 import { db } from "@/lib/db";
 import { formatMoney } from "@/lib/money";
 import { todayIn } from "@/lib/tz";
@@ -23,7 +24,7 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
   const m = (v: string) => formatMoney(v, clinic.currency);
   const q = new URLSearchParams({ from, to, ...(sp.branchId ? { branchId: sp.branchId } : {}), ...(sp.doctorId ? { doctorId: sp.doctorId } : {}) }).toString();
   return (
-    <div className="space-y-5"><div className="flex items-end justify-between"><h1 className="text-2xl font-semibold">Reports</h1><a className="no-print text-sm underline" href={`/api/reports/export?${q}`}>Export CSV</a></div>
+    <div className="space-y-5"><div className="flex items-end justify-between"><PageTitle>Reports</PageTitle><a className="no-print text-sm underline" href={`/api/reports/export?${q}`}>Export CSV</a></div>
       <ReportFilters action="/admin/reports" from={from} to={to} branchId={sp.branchId} doctorId={sp.doctorId} branches={branches} doctors={doctorsList} lockBranch={!!ctx.branchId} />
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">{([["Revenue (net of refunds)", m(fin.revenue)], ["Refunds", m(fin.refunds)], ["Expenses", m(fin.expenses)], ["Net income", m(fin.net)], ["Outstanding", m(fin.outstanding)]] as [string, string][]).map(([k, v]) => <Card key={k} className="p-3"><p className="text-xs text-muted-foreground">{k}</p><p className="mt-1 text-xl font-semibold">{v}</p></Card>)}</div>
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">{([["Appointments", appts.total], ["Completed", appts.completed], ["Cancelled", appts.cancelled], ["No-show", appts.noShow], ["Cancellation rate", appts.cancellationRate + "%"]] as [string, string | number][]).map(([k, v]) => <Card key={k} className="p-3"><p className="text-xs text-muted-foreground">{k}</p><p className="mt-1 text-xl font-semibold">{v}</p></Card>)}</div>

@@ -16,7 +16,7 @@ export async function AppShell({ nav, title, user, children }: { nav: NavItem[];
       </aside>
       <div className="min-w-0">
         <header className="no-print flex items-center justify-between border-b bg-card px-4 py-2">
-          <span className="text-sm text-muted-foreground">{user}</span>
+          <span className="hidden text-sm text-muted-foreground sm:inline">{user}</span>
           <div className="flex items-center gap-1"><NotificationBell /><LocaleToggle current={l} /><ThemeToggle /><SignOutButton label={t("signOut")} /></div>
         </header>
         <main className="fade-in mx-auto max-w-7xl p-4 sm:p-6">{children}</main>

@@ -1,3 +1,4 @@
+import { PageTitle } from "@/components/shell/page-title";
 import Link from "next/link";
 import { db } from "@/lib/db";
 import { clinicTz, fmtLocal } from "@/lib/clinic-time";
@@ -33,7 +34,7 @@ export default async function AppointmentsPage({ searchParams }: { searchParams:
   const today = todayIn(tz);
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-end justify-between gap-3"><div><h1 className="text-2xl font-semibold">Appointments</h1><p className="text-sm text-muted-foreground">{view === "month" ? day.slice(0, 7) : view === "week" ? `Week of ${first}` : day} &middot; {rows.length} appointments &middot; times in {tz}</p></div>
+      <div className="flex flex-wrap items-end justify-between gap-3"><div><PageTitle>Appointments</PageTitle><p className="text-sm text-muted-foreground">{view === "month" ? day.slice(0, 7) : view === "week" ? `Week of ${first}` : day} &middot; {rows.length} appointments &middot; times in {tz}</p></div>
         <div className="no-print flex flex-wrap items-center gap-2">
           <div className="inline-flex overflow-hidden rounded-md border" role="group" aria-label="View">{(["day", "week", "month"] as const).map((v) => <Link key={v} href={qs(day, v)} aria-current={view === v ? "true" : undefined} className={cn("px-3 py-1.5 text-sm capitalize", view === v ? "bg-primary text-primary-foreground" : "hover:bg-muted")}>{v}</Link>)}</div>
           <Link className="rounded-md border px-3 py-1.5 text-sm hover:bg-muted" href={qs(prev)} aria-label="Previous">&lsaquo; Prev</Link><Link className="rounded-md border px-3 py-1.5 text-sm hover:bg-muted" href={qs(today)}>Today</Link><Link className="rounded-md border px-3 py-1.5 text-sm hover:bg-muted" href={qs(next)} aria-label="Next">Next &rsaquo;</Link>
