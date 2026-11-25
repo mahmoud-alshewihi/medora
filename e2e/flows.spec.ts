@@ -64,3 +64,12 @@ test("owner adds staff and saves settings", async ({ page }) => {
   await page.getByRole("button", { name: "Save settings" }).click();
   await expect(page.getByRole("status")).toContainText("Settings saved");
 });
+
+test("owner opens reports", async ({ page }) => {
+  await login(page, "owner@nile.medora.test");
+  await page.waitForURL(/\/admin/);
+  await page.goto("/admin/reports");
+  await expect(page.getByRole("heading", { name: "Reports" })).toBeVisible();
+  await expect(page.getByText("Net income")).toBeVisible();
+  await expect(page.getByRole("columnheader", { name: "Doctor" })).toBeVisible();
+});

@@ -9,14 +9,14 @@ Honest status. Everything under "Verified" was actually run in the build sandbox
 - `npm run build` (next build): succeeds.
 - Migrations apply; seed runs: 3 clinics, 7 branches, 20 doctors, 36 staff, 500 patients, 1000 appointments, 639 invoices, 538 payments. Seed data is generated demo data, labelled as such.
 - Smoke test against the production server: login works; role redirects verified (owner -> /admin, doctor blocked from /admin, patient -> /portal, super admin -> /platform and blocked from tenant pages, reception -> /reception).
-- Playwright e2e: 6 tests pass (public pages, owner dashboard/patients, doctor blocked from admin, record payment, add expense, add staff + save settings, all through the UI) using the sandbox's Chrome.
+- Playwright e2e: 7 tests pass (public pages, dashboard/patients, role redirect, record payment, add expense, add staff + save settings, reports page, all through the UI) using the sandbox's Chrome.
 - Bug found by tests and fixed: code inside a Prisma transaction used the global client and starved the connection pool under concurrent booking.
 
 ## Built
 Schema (~60 models) and migrations; RBAC matrix; Better Auth sessions; tenant scoping on every query; appointments, queue, consultations, prescriptions, labs, follow-ups; billing, payments, refunds, cash register, expenses; inventory (batches, expiry, transfers, purchase orders); notifications with truthful delivery status; reports and CSV export; platform admin (plans, suspension); audit log; rate limiting; CSRF origin check; upload validation. Full REST API under /api. UI: public site, clinic pages, booking wizard, auth pages, admin dashboard with Recharts, patients list and profile, appointments list, invoices list, inventory list, reception live queue (polling), doctor day view, patient portal overview, platform clinics list. English and Arabic dictionary with RTL, dark mode toggle.
 
 ## NOT finished (do not treat as done)
-- Admin reports page is a placeholder (expenses, staff and settings pages are real; staff form covers non-doctor roles only, doctor creation is API-only); the data and actions exist only through the API.
+- Reports page is basic (summary cards, doctor and branch tables, CSV export link; no charts or previous-period comparison in the UI). Expenses, staff and settings pages are real ( staff form covers non-doctor roles only, doctor creation is API-only); the data and actions exist only through the API.
 - No interactive UI for: consultation screen, prescriptions/labs entry, refunds, cash close, stock adjust/transfer, purchase orders, appointment calendar (day/week/month grid; only a 7-day list), patient edit/import forms, portal booking/cancel/reschedule, notification centre page, printable prescription/invoice pages, /verify-email page. These work via API and are covered by service-level tests, not UI tests.
 - Arabic coverage is partial; many authenticated screens are English only.
 - Dockerfile, docker-compose.yml and the GitHub Actions workflow are UNTESTED (no Docker or CI runner here).
