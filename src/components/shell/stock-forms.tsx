@@ -1,4 +1,5 @@
 "use client";
+import { T } from "@/components/t";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { api } from "@/lib/api-client";
@@ -19,16 +20,16 @@ export function StockForms({ items, branches, lockBranch }: { items: Opt[]; bran
   }
   return (
     <form onSubmit={submit} className="space-y-3 rounded-lg border bg-card p-4">
-      <div className="inline-flex overflow-hidden rounded-md border" role="group" aria-label="Stock action">{(["receive", "consume"] as const).map((m) => <button type="button" key={m} onClick={() => setMode(m)} aria-pressed={mode === m} className={"px-3 py-1.5 text-sm capitalize " + (mode === m ? "bg-primary text-primary-foreground" : "hover:bg-muted")}>{m === "receive" ? "Receive stock" : "Consume / use"}</button>)}</div>
+      <div className="inline-flex overflow-hidden rounded-md border" role="group" aria-label="Stock action">{(["receive", "consume"] as const).map((m) => <button type="button" key={m} onClick={() => setMode(m)} aria-pressed={mode === m} className={"px-3 py-1.5 text-sm capitalize " + (mode === m ? "bg-primary text-primary-foreground" : "hover:bg-muted")}>{m === "receive" ? <T>Receive stock</T> : <T>Consume / use</T>}</button>)}</div>
       <div className="flex flex-wrap items-end gap-2">
-        <label className="text-xs">Item<Select name="itemId" required className="mt-1 w-56">{items.map((i) => <option key={i.id} value={i.id}>{i.name}</option>)}</Select></label>
-        <label className="text-xs">Branch<Select name="branchId" required className="mt-1 w-40">{branches.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}</Select></label>
-        <label className="text-xs">Quantity<Input name="quantity" type="number" min={1} step={1} required className="mt-1 w-24" /></label>
-        {mode === "receive" ? <><label className="text-xs">Batch number<Input name="batchNumber" required maxLength={40} className="mt-1 w-36" /></label><label className="text-xs">Expiry date<Input name="expiresOn" type="date" className="mt-1 w-40" /></label></>
-          : <label className="text-xs">Reason<Input name="reason" maxLength={200} className="mt-1 w-48" /></label>}
-        <Button type="submit" disabled={busy}>{busy ? "Saving..." : mode === "receive" ? "Receive" : "Consume"}</Button>
+        <label className="text-xs"><T>Item</T><Select name="itemId" required className="mt-1 w-56">{items.map((i) => <option key={i.id} value={i.id}>{i.name}</option>)}</Select></label>
+        <label className="text-xs"><T>Branch</T><Select name="branchId" required className="mt-1 w-40">{branches.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}</Select></label>
+        <label className="text-xs"><T>Quantity</T><Input name="quantity" type="number" min={1} step={1} required className="mt-1 w-24" /></label>
+        {mode === "receive" ? <><label className="text-xs"><T>Batch number</T><Input name="batchNumber" required maxLength={40} className="mt-1 w-36" /></label><label className="text-xs"><T>Expiry date</T><Input name="expiresOn" type="date" className="mt-1 w-40" /></label></>
+          : <label className="text-xs"><T>Reason</T><Input name="reason" maxLength={200} className="mt-1 w-48" /></label>}
+        <Button type="submit" disabled={busy}>{busy ? <T>Saving...</T> : mode === "receive" ? <T>Receive</T> : <T>Consume</T>}</Button>
       </div>
-      {lockBranch && <p className="text-xs text-muted-foreground">Your account is limited to its own branch.</p>}
+      {lockBranch && <p className="text-xs text-muted-foreground"><T>Your account is limited to its own branch.</T></p>}
       {msg && <p role="status" className="text-sm text-green-700">{msg}</p>}{err && <p role="alert" className="text-sm text-red-600">{err}</p>}
     </form>
   );

@@ -40,3 +40,9 @@ Fixed the page font (it rendered in a serif fallback), added a nav with icons an
 - Admin UI: add-doctor form (specialty, fee, commission, slot, working days), patient edit form, patient CSV import, purchase orders (create, list, receive), cash register close, portal reschedule.
 - Playwright 21/21 on a freshly seeded DB; tsc clean. Cash-close can only run once per day, so reruns on the same DB accept the "already closed" message, and a closed register blocks payments until re-seed (correct app behaviour, but e2e needs a fresh seed).
 - Not done: Arabic on authenticated form labels/buttons/badges (titles, nav and table headers are translated), purchase orders are single-line in the UI, Docker/compose/CI still untested here, vitest 76/76 re-run after M12.
+
+## M13 additions (verified this run)
+- Arabic now covers form labels, buttons, select options, status/role badges and the inventory summary line on authenticated screens, through a <T> component and the phrase map (src/lib/i18n/phrases.ts). Phrases not in the map, and server messages such as "Saved." or "Stock received", stay English.
+- Checked by screenshot: Arabic inventory and staff, mobile portal, dark billing.
+- Runs: tsc clean; Playwright 21/21 on a full run before the last small edit (stock-form button, inventory summary), then the stock, Arabic and purchase-order tests re-run and pass (3/3) after it; the full suite was not repeated after that edit.
+- Still not done: Arabic for error/success messages and placeholders, Docker/compose/CI untested here, nothing deployed by me.

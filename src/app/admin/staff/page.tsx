@@ -1,3 +1,4 @@
+import { T } from "@/components/t";
 import { PageTitle } from "@/components/shell/page-title";
 import { db } from "@/lib/db";
 import { Badge } from "@/components/ui/primitives";
@@ -14,7 +15,7 @@ export default async function StaffPage() {
     <div className="space-y-4"><PageTitle>Staff</PageTitle>
       <StaffForm branches={branches} />
       <DoctorForm branches={branches} specialties={specialties} />
-      <DataTable head={["Name", "Email", "Role", "Branch", "Status", ""]} rows={staff.map((s) => [s.name, s.email, s.role, s.branch, <Badge key={s.userId} value={s.status} />, s.userId === ctx.userId ? "" : <StaffStatusButton key={s.userId + "b"} userId={s.userId} status={s.status} />])} />
+      <DataTable head={["Name", "Email", "Role", "Branch", "Status", ""]} rows={staff.map((s) => [s.name, s.email, <T key={s.userId + "r"}>{s.role}</T>, s.branch, <Badge key={s.userId} value={s.status} />, s.userId === ctx.userId ? "" : <StaffStatusButton key={s.userId + "b"} userId={s.userId} status={s.status} />])} />
     </div>
   );
 }

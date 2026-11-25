@@ -1,4 +1,5 @@
 "use client";
+import { T } from "@/components/t";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { api } from "@/lib/api-client";
@@ -18,15 +19,15 @@ export function PatientEditForm({ p }: { p: P }) {
   }
   return (
     <details className="rounded-lg border bg-card p-3">
-      <summary className="cursor-pointer text-sm font-medium">Edit details</summary>
+      <summary className="cursor-pointer text-sm font-medium"><T>Edit details</T></summary>
       <form onSubmit={submit} className="mt-3 flex flex-wrap items-end gap-2">
-        <label className="text-xs">Full name<Input name="fullName" defaultValue={p.fullName} required className="mt-1 w-48" /></label>
-        <label className="text-xs">Gender<Select name="gender" defaultValue={p.gender ?? ""} className="mt-1 w-32"><option value="">-</option><option value="MALE">Male</option><option value="FEMALE">Female</option><option value="OTHER">Other</option></Select></label>
-        <label className="text-xs">Date of birth<Input name="dob" type="date" defaultValue={p.dateOfBirth ? String(p.dateOfBirth).slice(0, 10) : ""} className="mt-1 w-40" /></label>
-        <label className="text-xs">Phone<Input name="phone" defaultValue={p.phone ?? ""} className="mt-1 w-40" /></label>
-        <label className="text-xs">Email<Input name="email" type="email" defaultValue={p.email ?? ""} className="mt-1 w-52" /></label>
-        <label className="text-xs">Address<Input name="address" defaultValue={p.address ?? ""} className="mt-1 w-64" /></label>
-        <Button type="submit" disabled={busy}>{busy ? "Saving..." : "Save changes"}</Button>
+        <label className="text-xs"><T>Full name</T><Input name="fullName" defaultValue={p.fullName} required className="mt-1 w-48" /></label>
+        <label className="text-xs"><T>Gender</T><Select name="gender" defaultValue={p.gender ?? ""} className="mt-1 w-32"><option value="">-</option><option value="MALE"><T>Male</T></option><option value="FEMALE"><T>Female</T></option><option value="OTHER"><T>Other</T></option></Select></label>
+        <label className="text-xs"><T>Date of birth</T><Input name="dob" type="date" defaultValue={p.dateOfBirth ? String(p.dateOfBirth).slice(0, 10) : ""} className="mt-1 w-40" /></label>
+        <label className="text-xs"><T>Phone</T><Input name="phone" defaultValue={p.phone ?? ""} className="mt-1 w-40" /></label>
+        <label className="text-xs"><T>Email</T><Input name="email" type="email" defaultValue={p.email ?? ""} className="mt-1 w-52" /></label>
+        <label className="text-xs"><T>Address</T><Input name="address" defaultValue={p.address ?? ""} className="mt-1 w-64" /></label>
+        <Button type="submit" disabled={busy}>{busy ? <T>Saving...</T> : <T>Save changes</T>}</Button>
         {ok && <p role="status" className="w-full text-sm text-green-700">{ok}</p>}
         {err && <p role="alert" className="w-full text-sm text-red-600">{err}</p>}
       </form>
@@ -48,10 +49,10 @@ export function PatientImport() {
   }
   return (
     <details className="rounded-lg border bg-card p-3">
-      <summary className="cursor-pointer text-sm font-medium">Import patients from CSV</summary>
+      <summary className="cursor-pointer text-sm font-medium"><T>Import patients from CSV</T></summary>
       <form onSubmit={submit} className="mt-3 space-y-2">
         <p className="text-xs text-muted-foreground">First row must be headers. Columns: fullName (required), gender, dateOfBirth (YYYY-MM-DD), phone, email, address. Max 5000 rows.</p>
-        <div className="flex items-center gap-2"><input name="file" type="file" accept=".csv,text/csv" className="text-sm" /><Button type="submit" disabled={busy}>{busy ? "Importing..." : "Import"}</Button></div>
+        <div className="flex items-center gap-2"><input name="file" type="file" accept=".csv,text/csv" className="text-sm" /><Button type="submit" disabled={busy}>{busy ? <T>Importing...</T> : <T>Import</T>}</Button></div>
         {msg && <p role={bad ? "alert" : "status"} className={bad ? "text-sm text-red-600" : "text-sm text-green-700"}>{msg}</p>}
         {errs.length > 0 && <ul className="list-disc ps-5 text-xs text-red-600">{errs.map((x) => <li key={x.row}>Row {x.row}: {x.message}</li>)}</ul>}
       </form>

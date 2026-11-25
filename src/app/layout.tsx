@@ -9,7 +9,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const { l, dir } = await getT();
   return (
     <html lang={l} dir={dir} suppressHydrationWarning>
-      <body className="min-h-screen antialiased"><Providers>{children}</Providers></body>
+      <body className="min-h-screen antialiased"><Providers locale={l}>{children}</Providers></body>
     </html>
   );
 }

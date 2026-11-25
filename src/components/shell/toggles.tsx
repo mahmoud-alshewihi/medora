@@ -1,4 +1,5 @@
 "use client";
+import { T } from "@/components/t";
 import { useTheme } from "next-themes";
 import { Moon, Sun, Languages, LogOut } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -11,7 +12,7 @@ export function ThemeToggle() {
 }
 export function LocaleToggle({ current }: { current: "en" | "ar" }) {
   const router = useRouter();
-  return <Button variant="ghost" size="sm" aria-label="Switch language" onClick={() => { document.cookie = `locale=${current === "en" ? "ar" : "en"}; path=/; max-age=31536000; samesite=lax`; router.refresh(); }}><Languages className="h-4 w-4" />{current === "en" ? "AR" : "EN"}</Button>;
+  return <Button variant="ghost" size="sm" aria-label="Switch language" onClick={() => { document.cookie = `locale=${current === "en" ? "ar" : "en"}; path=/; max-age=31536000; samesite=lax`; router.refresh(); }}><Languages className="h-4 w-4" />{current === "en" ? <T>AR</T> : <T>EN</T>}</Button>;
 }
 export function SignOutButton({ label }: { label: string }) {
   const router = useRouter();

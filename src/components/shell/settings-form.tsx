@@ -1,4 +1,5 @@
 "use client";
+import { T } from "@/components/t";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { api } from "@/lib/api-client";
@@ -15,13 +16,13 @@ export function SettingsForm({ c }: { c: { name: string; phone: string | null; e
   }
   return (
     <form onSubmit={submit} className="grid max-w-xl gap-3 rounded-lg border bg-card p-4">
-      <label className="text-sm">Clinic name<Input name="name" required defaultValue={c.name} className="mt-1" /></label>
-      <label className="text-sm">Phone<Input name="phone" defaultValue={c.phone ?? ""} className="mt-1" /></label>
-      <label className="text-sm">Email<Input name="email" type="email" defaultValue={c.email ?? ""} className="mt-1" /></label>
-      <label className="text-sm">Address<Input name="address" defaultValue={c.address ?? ""} className="mt-1" /></label>
-      <label className="text-sm">Invoice prefix<Input name="invoicePrefix" required defaultValue={c.invoicePrefix} className="mt-1" /></label>
-      <label className="text-sm">Brand colour<Input name="primaryColor" required defaultValue={c.primaryColor} pattern="#[0-9a-fA-F]{6}" className="mt-1" /></label>
-      <Button type="submit" disabled={busy}>{busy ? "Saving..." : "Save settings"}</Button>
+      <label className="text-sm"><T>Clinic name</T><Input name="name" required defaultValue={c.name} className="mt-1" /></label>
+      <label className="text-sm"><T>Phone</T><Input name="phone" defaultValue={c.phone ?? ""} className="mt-1" /></label>
+      <label className="text-sm"><T>Email</T><Input name="email" type="email" defaultValue={c.email ?? ""} className="mt-1" /></label>
+      <label className="text-sm"><T>Address</T><Input name="address" defaultValue={c.address ?? ""} className="mt-1" /></label>
+      <label className="text-sm"><T>Invoice prefix</T><Input name="invoicePrefix" required defaultValue={c.invoicePrefix} className="mt-1" /></label>
+      <label className="text-sm"><T>Brand colour</T><Input name="primaryColor" required defaultValue={c.primaryColor} pattern="#[0-9a-fA-F]{6}" className="mt-1" /></label>
+      <Button type="submit" disabled={busy}>{busy ? <T>Saving...</T> : <T>Save settings</T>}</Button>
       {msg && <p role="status" className="text-sm text-green-700">{msg}</p>}{err && <p role="alert" className="text-sm text-red-600">{err}</p>}
     </form>
   );

@@ -1,4 +1,5 @@
 "use client";
+import { T } from "@/components/t";
 import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
 import { api } from "@/lib/api-client";
@@ -18,10 +19,10 @@ export function PaymentForm({ invoiceId, remaining }: { invoiceId: string; remai
   }
   return (
     <form onSubmit={submit} className="no-print flex flex-wrap items-end gap-2 rounded-lg border bg-card p-3">
-      <label className="text-xs">Amount<Input name="amount" required inputMode="decimal" defaultValue={remaining} className="mt-1 w-32" /></label>
-      <label className="text-xs">Method<Select name="method" className="mt-1 w-44"><option value="CASH">Cash</option><option value="CARD">Card (recorded offline)</option><option value="BANK_TRANSFER">Bank transfer</option><option value="MOBILE_WALLET">Mobile wallet</option></Select></label>
-      <label className="text-xs">Reference<Input name="reference" className="mt-1 w-40" /></label>
-      <Button type="submit" disabled={busy}>{busy ? "Saving..." : "Record payment"}</Button>
+      <label className="text-xs"><T>Amount</T><Input name="amount" required inputMode="decimal" defaultValue={remaining} className="mt-1 w-32" /></label>
+      <label className="text-xs"><T>Method</T><Select name="method" className="mt-1 w-44"><option value="CASH"><T>Cash</T></option><option value="CARD"><T>Card (recorded offline)</T></option><option value="BANK_TRANSFER"><T>Bank transfer</T></option><option value="MOBILE_WALLET"><T>Mobile wallet</T></option></Select></label>
+      <label className="text-xs"><T>Reference</T><Input name="reference" className="mt-1 w-40" /></label>
+      <Button type="submit" disabled={busy}>{busy ? <T>Saving...</T> : <T>Record payment</T>}</Button>
       {err && <p role="alert" className="w-full text-sm text-red-600">{err}</p>}
     </form>
   );

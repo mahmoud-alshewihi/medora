@@ -2,6 +2,7 @@
 import * as React from "react";
 import * as AlertDialog from "@radix-ui/react-alert-dialog";
 import { cn } from "@/lib/utils";
+import { T } from "@/components/t";
 
 export const Button = React.forwardRef<HTMLButtonElement, React.ButtonHTMLAttributes<HTMLButtonElement> & { variant?: "primary" | "outline" | "danger" | "ghost"; size?: "sm" | "md" }>(
   ({ className, variant = "primary", size = "md", ...p }, ref) => (
@@ -50,7 +51,7 @@ const tones: Record<string, string> = {
   ACTIVE: "bg-success/15 text-success", SUSPENDED: "bg-danger/15 text-danger",
 };
 export function Badge({ value }: { value: string }) {
-  return <span className={cn("inline-block rounded px-2 py-0.5 text-xs font-medium", tones[value] ?? "bg-muted text-muted-foreground")}>{value.replace(/_/g, " ")}</span>;
+  return <span className={cn("inline-block rounded px-2 py-0.5 text-xs font-medium", tones[value] ?? "bg-muted text-muted-foreground")}><T>{value.replace(/_/g, " ")}</T></span>;
 }
 
 export function Skeleton({ className }: { className?: string }) { return <div className={cn("skeleton h-4 w-full", className)} aria-hidden />; }

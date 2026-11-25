@@ -1,4 +1,5 @@
 "use client";
+import { T } from "@/components/t";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api-client";
@@ -26,7 +27,7 @@ export function RescheduleButton({ appointmentId, slug, doctorId, branchId }: { 
     <div className="space-y-2 rounded border p-2">
       <Input type="date" aria-label="New date" value={date} min={new Date().toISOString().slice(0, 10)} onChange={(e) => setDate(e.target.value)} />
       {slots && (slots.slots.length ? <div role="radiogroup" aria-label="New time" className="flex flex-wrap gap-1">{slots.slots.map((s) => <button type="button" key={s.startsAt} role="radio" aria-checked={startsAt === s.startsAt} onClick={() => setStartsAt(s.startsAt)} className={"rounded border px-2 py-0.5 text-xs " + (startsAt === s.startsAt ? "bg-primary text-primary-foreground" : "")}>{s.time}</button>)}</div> : <p className="text-xs text-muted-foreground">{slots.closedReason ?? "No available times on this date."}</p>)}
-      <div className="flex gap-2"><Button disabled={busy || !startsAt} onClick={save}>Confirm</Button><Button variant="outline" onClick={() => setOpen(false)}>Close</Button></div>
+      <div className="flex gap-2"><Button disabled={busy || !startsAt} onClick={save}><T>Confirm</T></Button><Button variant="outline" onClick={() => setOpen(false)}>Close</Button></div>
       {err && <p role="alert" className="text-xs text-red-600">{err}</p>}
     </div>
   );

@@ -1,4 +1,5 @@
 "use client";
+import { T } from "@/components/t";
 import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
 import { api } from "@/lib/api-client";
@@ -13,9 +14,9 @@ export function RefundForm({ paymentId, max }: { paymentId: string; max: string 
   }
   return (
     <form onSubmit={submit} className="no-print mt-1 flex flex-wrap items-end gap-2 text-xs">
-      <label>Refund<Input name="amount" required inputMode="decimal" defaultValue={max} className="ms-1 w-24" aria-label={`Refund amount ${paymentId}`} /></label>
-      <label>Reason<Input name="reason" required minLength={2} className="ms-1 w-44" aria-label={`Refund reason ${paymentId}`} /></label>
-      <Button type="submit" variant="outline" disabled={busy}>Refund</Button>
+      <label><T>Refund</T><Input name="amount" required inputMode="decimal" defaultValue={max} className="ms-1 w-24" aria-label={`Refund amount ${paymentId}`} /></label>
+      <label><T>Reason</T><Input name="reason" required minLength={2} className="ms-1 w-44" aria-label={`Refund reason ${paymentId}`} /></label>
+      <Button type="submit" variant="outline" disabled={busy}><T>Refund</T></Button>
       {err && <span role="alert" className="text-red-600">{err}</span>}
     </form>
   );
