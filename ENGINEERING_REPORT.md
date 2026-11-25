@@ -9,7 +9,7 @@ Honest status. Everything under "Verified" was actually run in the build sandbox
 - `npm run build` (next build): succeeds.
 - Migrations apply; seed runs: 3 clinics, 7 branches, 20 doctors, 36 staff, 500 patients, 1000 appointments, 639 invoices, 538 payments. Seed data is generated demo data, labelled as such.
 - Smoke test against the production server: login works; role redirects verified (owner -> /admin, doctor blocked from /admin, patient -> /portal, super admin -> /platform and blocked from tenant pages, reception -> /reception).
-- Playwright e2e: 3 tests pass (public pages, owner dashboard/patients, doctor blocked from admin) using the sandbox's Chrome.
+- Playwright e2e: 4 tests pass (public pages, owner dashboard/patients, doctor blocked from admin, accountant records a payment via the new invoice page UI) using the sandbox's Chrome.
 - Bug found by tests and fixed: code inside a Prisma transaction used the global client and starved the connection pool under concurrent booking.
 
 ## Built
@@ -17,7 +17,7 @@ Schema (~60 models) and migrations; RBAC matrix; Better Auth sessions; tenant sc
 
 ## NOT finished (do not treat as done)
 - Admin pages for expenses, reports, staff and settings are placeholders; the data and actions exist only through the API.
-- No interactive UI for: consultation screen, prescriptions/labs entry, recording payments, refunds, cash close, stock adjust/transfer, purchase orders, appointment calendar (day/week/month grid; only a 7-day list), patient edit/import forms, portal booking/cancel/reschedule, notification centre page, printable prescription/invoice pages, /verify-email page. These work via API and are covered by service-level tests, not UI tests.
+- No interactive UI for: consultation screen, prescriptions/labs entry, refunds, cash close, stock adjust/transfer, purchase orders, appointment calendar (day/week/month grid; only a 7-day list), patient edit/import forms, portal booking/cancel/reschedule, notification centre page, printable prescription/invoice pages, /verify-email page. These work via API and are covered by service-level tests, not UI tests.
 - Arabic coverage is partial; many authenticated screens are English only.
 - Dockerfile, docker-compose.yml and the GitHub Actions workflow are UNTESTED (no Docker or CI runner here).
 - `npm start` uses `next start` with a standalone build config; it works but Next warns. Use `node .next/standalone/server.js` in containers after copying static assets.

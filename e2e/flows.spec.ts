@@ -25,3 +25,15 @@ test("doctor cannot open admin", async ({ page }) => {
   await page.goto("/admin");
   await expect(page).toHaveURL(/\/doctor/);
 });
+
+test("accountant records a payment from the invoice page", async ({ page }) => {
+  await login(page, "accountant@nile.medora.test");
+  await page.waitForURL(/\/admin/);
+  await page.goto("/admin/billing");
+  const rows = page.locator("tbody tr", { hasText: /ISSUED|PARTIALLY_PAID/ });
+  await rows.first().getByRole("link").click();
+  await expect(page.getByRole("heading", { name: /Invoice/ })).toBeVisible();
+  await page.getByRole("button", { name: "Record payment" }).click();
+  await expect(page.getByText(/RCT-\d+/).first()).toBeVisible();
+  await expect(page.getByText("Record payment")).toHaveCount(0);
+});

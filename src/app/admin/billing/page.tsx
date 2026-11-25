@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { db } from "@/lib/db";
 import { formatMoney } from "@/lib/money";
 import { Badge } from "@/components/ui/primitives";
@@ -10,7 +11,7 @@ export default async function BillingPage() {
   const rows = await db.invoice.findMany({ where: { clinicId: ctx.clinicId, ...(ctx.branchId ? { branchId: ctx.branchId } : {}) }, orderBy: { issuedAt: "desc" }, take: 100 });
   return (
     <div className="space-y-4"><h1 className="text-2xl font-semibold">Invoices</h1>
-      <DataTable head={["Number", "Patient ref", "Total", "Paid", "Status"]} rows={rows.map((i) => [i.number, i.patientId.slice(0, 8), formatMoney(i.total.toString(), i.currency), formatMoney(i.paidAmount.toString(), i.currency), <Badge key={i.id} value={i.status} />])} />
+      <DataTable head={["Number", "Patient ref", "Total", "Paid", "Status"]} rows={rows.map((i) => [<Link key={i.id + "l"} className="text-primary underline" href={`/admin/billing/${i.id}`}>{i.number}</Link>, i.patientId.slice(0, 8), formatMoney(i.total.toString(), i.currency), formatMoney(i.paidAmount.toString(), i.currency), <Badge key={i.id} value={i.status} />])} />
     </div>
   );
 }
