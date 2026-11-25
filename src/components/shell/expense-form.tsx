@@ -22,7 +22,7 @@ export function ExpenseForm({ categories, branches, lockBranch }: { categories: 
       <label className="text-xs"><T>Amount</T><Input name="amount" required inputMode="decimal" className="mt-1 w-28" /></label>
       <label className="text-xs"><T>Date</T><Input type="date" name="incurredOn" required defaultValue={new Date().toISOString().slice(0, 10)} className="mt-1 w-40" /></label>
       <Button type="submit" disabled={busy}>{busy ? <T>Saving...</T> : <T>Add expense</T>}</Button>
-      {err && <p role="alert" className="w-full text-sm text-red-600">{err}</p>}
+      {err && <p role="alert" className="w-full text-sm text-red-600"><T>{err}</T></p>}
     </form>
   );
 }

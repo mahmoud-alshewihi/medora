@@ -12,7 +12,7 @@ export function StaffStatusButton({ userId, status }: { userId: string; status: 
     try { await api("/api/staff", { method: "PATCH", body: { userId, status: status === "ACTIVE" ? "SUSPENDED" : "ACTIVE" } }); router.refresh(); }
     catch (x) { setErr(x instanceof Error ? x.message : "Failed"); } finally { setBusy(false); }
   }
-  return <span><Button variant="outline" onClick={toggle} disabled={busy}>{status === "ACTIVE" ? <T>Suspend</T> : <T>Reactivate</T>}</Button>{err && <span role="alert" className="ms-2 text-xs text-red-600">{err}</span>}</span>;
+  return <span><Button variant="outline" onClick={toggle} disabled={busy}>{status === "ACTIVE" ? <T>Suspend</T> : <T>Reactivate</T>}</Button>{err && <span role="alert" className="ms-2 text-xs text-red-600"><T>{err}</T></span>}</span>;
 }
 
 export function StaffForm({ branches }: { branches: { id: string; name: string }[] }) {
@@ -32,7 +32,7 @@ export function StaffForm({ branches }: { branches: { id: string; name: string }
       <label className="text-xs"><T>Role</T><Select name="role" className="mt-1 w-40"><option value="RECEPTIONIST"><T>Receptionist</T></option><option value="ACCOUNTANT"><T>Accountant</T></option><option value="NURSE"><T>Nurse</T></option><option value="BRANCH_MANAGER"><T>Branch manager</T></option></Select></label>
       <label className="text-xs"><T>Branch</T><Select name="branchId" className="mt-1 w-40"><option value=""><T>All branches</T></option>{branches.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}</Select></label>
       <Button type="submit" disabled={busy}>{busy ? <T>Saving...</T> : <T>Add staff</T>}</Button>
-            {err && <p role="alert" className="w-full text-sm text-red-600">{err}</p>}
+            {err && <p role="alert" className="w-full text-sm text-red-600"><T>{err}</T></p>}
     </form>
   );
 }
@@ -74,8 +74,8 @@ export function DoctorForm({ branches, specialties }: { branches: { id: string; 
           {DAYS.map((d, i) => <label key={d} className="flex items-center gap-1"><input type="checkbox" name={"day" + i} defaultChecked={i >= 0 && i <= 4} />{d}</label>)}
         </fieldset>
         <Button type="submit" disabled={busy}>{busy ? <T>Saving...</T> : <T>Add doctor</T>}</Button>
-        {ok && <p role="status" className="w-full text-sm text-green-700">{ok}</p>}
-        {err && <p role="alert" className="w-full text-sm text-red-600">{err}</p>}
+        {ok && <p role="status" className="w-full text-sm text-green-700"><T>{ok}</T></p>}
+        {err && <p role="alert" className="w-full text-sm text-red-600"><T>{err}</T></p>}
       </form>
     </details>
   );

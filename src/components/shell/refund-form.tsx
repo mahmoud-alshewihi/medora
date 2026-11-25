@@ -17,7 +17,7 @@ export function RefundForm({ paymentId, max }: { paymentId: string; max: string 
       <label><T>Refund</T><Input name="amount" required inputMode="decimal" defaultValue={max} className="ms-1 w-24" aria-label={`Refund amount ${paymentId}`} /></label>
       <label><T>Reason</T><Input name="reason" required minLength={2} className="ms-1 w-44" aria-label={`Refund reason ${paymentId}`} /></label>
       <Button type="submit" variant="outline" disabled={busy}><T>Refund</T></Button>
-      {err && <span role="alert" className="text-red-600">{err}</span>}
+      {err && <span role="alert" className="text-red-600"><T>{err}</T></span>}
     </form>
   );
 }

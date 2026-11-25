@@ -12,5 +12,5 @@ export function CancelButton({ appointmentId }: { appointmentId: string }) {
     setBusy(true); setErr("");
     try { await api("/api/portal/appointments", { method: "PATCH", body: { action: "cancel", appointmentId } }); router.refresh(); } catch (x) { setErr(x instanceof Error ? x.message : "Failed"); } finally { setBusy(false); }
   }
-  return <span><Button variant="outline" disabled={busy} onClick={go}><T>Cancel</T></Button>{err && <span role="alert" className="ms-2 text-xs text-red-600">{err}</span>}</span>;
+  return <span><Button variant="outline" disabled={busy} onClick={go}><T>Cancel</T></Button>{err && <span role="alert" className="ms-2 text-xs text-red-600"><T>{err}</T></span>}</span>;
 }

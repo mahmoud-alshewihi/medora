@@ -23,7 +23,7 @@ export function SettingsForm({ c }: { c: { name: string; phone: string | null; e
       <label className="text-sm"><T>Invoice prefix</T><Input name="invoicePrefix" required defaultValue={c.invoicePrefix} className="mt-1" /></label>
       <label className="text-sm"><T>Brand colour</T><Input name="primaryColor" required defaultValue={c.primaryColor} pattern="#[0-9a-fA-F]{6}" className="mt-1" /></label>
       <Button type="submit" disabled={busy}>{busy ? <T>Saving...</T> : <T>Save settings</T>}</Button>
-      {msg && <p role="status" className="text-sm text-green-700">{msg}</p>}{err && <p role="alert" className="text-sm text-red-600">{err}</p>}
+      {msg && <p role="status" className="text-sm text-green-700"><T>{msg}</T></p>}{err && <p role="alert" className="text-sm text-red-600"><T>{err}</T></p>}
     </form>
   );
 }

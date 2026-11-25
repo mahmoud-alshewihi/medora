@@ -28,8 +28,8 @@ export function PatientEditForm({ p }: { p: P }) {
         <label className="text-xs"><T>Email</T><Input name="email" type="email" defaultValue={p.email ?? ""} className="mt-1 w-52" /></label>
         <label className="text-xs"><T>Address</T><Input name="address" defaultValue={p.address ?? ""} className="mt-1 w-64" /></label>
         <Button type="submit" disabled={busy}>{busy ? <T>Saving...</T> : <T>Save changes</T>}</Button>
-        {ok && <p role="status" className="w-full text-sm text-green-700">{ok}</p>}
-        {err && <p role="alert" className="w-full text-sm text-red-600">{err}</p>}
+        {ok && <p role="status" className="w-full text-sm text-green-700"><T>{ok}</T></p>}
+        {err && <p role="alert" className="w-full text-sm text-red-600"><T>{err}</T></p>}
       </form>
     </details>
   );
@@ -53,7 +53,7 @@ export function PatientImport() {
       <form onSubmit={submit} className="mt-3 space-y-2">
         <p className="text-xs text-muted-foreground">First row must be headers. Columns: fullName (required), gender, dateOfBirth (YYYY-MM-DD), phone, email, address. Max 5000 rows.</p>
         <div className="flex items-center gap-2"><input name="file" type="file" accept=".csv,text/csv" className="text-sm" /><Button type="submit" disabled={busy}>{busy ? <T>Importing...</T> : <T>Import</T>}</Button></div>
-        {msg && <p role={bad ? "alert" : "status"} className={bad ? "text-sm text-red-600" : "text-sm text-green-700"}>{msg}</p>}
+        {msg && <p role={bad ? "alert" : "status"} className={bad ? "text-sm text-red-600" : "text-sm text-green-700"}><T>{msg}</T></p>}
         {errs.length > 0 && <ul className="list-disc ps-5 text-xs text-red-600">{errs.map((x) => <li key={x.row}>Row {x.row}: {x.message}</li>)}</ul>}
       </form>
     </details>

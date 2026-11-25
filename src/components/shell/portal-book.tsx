@@ -32,7 +32,7 @@ export function PortalBook({ slug, branches, doctors }: { slug: string; branches
       {slots && (slots.slots.length ? <div role="radiogroup" aria-label="Available times" className="flex flex-wrap gap-2">{slots.slots.map((s) => <button type="button" key={s.startsAt} role="radio" aria-checked={startsAt === s.startsAt} onClick={() => setStartsAt(s.startsAt)} className={"rounded border px-2 py-1 text-sm " + (startsAt === s.startsAt ? "bg-primary text-primary-foreground" : "")}>{s.time}</button>)}</div> : <p className="text-sm text-muted-foreground">{slots.closedReason ?? "No available times on this date."}</p>)}
       <label className="text-sm"><T>Reason (optional)</T><Input name="reason" maxLength={300} className="mt-1" /></label>
       <Button type="submit" disabled={busy || !startsAt}>{busy ? <T>Booking...</T> : <T>Book appointment</T>}</Button>
-      {msg && <p role="status" className="text-sm text-green-700">{msg}</p>}{err && <p role="alert" className="text-sm text-red-600">{err}</p>}
+      {msg && <p role="status" className="text-sm text-green-700"><T>{msg}</T></p>}{err && <p role="alert" className="text-sm text-red-600"><T>{err}</T></p>}
     </form>
   );
 }

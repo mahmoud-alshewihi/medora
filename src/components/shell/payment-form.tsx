@@ -23,7 +23,7 @@ export function PaymentForm({ invoiceId, remaining }: { invoiceId: string; remai
       <label className="text-xs"><T>Method</T><Select name="method" className="mt-1 w-44"><option value="CASH"><T>Cash</T></option><option value="CARD"><T>Card (recorded offline)</T></option><option value="BANK_TRANSFER"><T>Bank transfer</T></option><option value="MOBILE_WALLET"><T>Mobile wallet</T></option></Select></label>
       <label className="text-xs"><T>Reference</T><Input name="reference" className="mt-1 w-40" /></label>
       <Button type="submit" disabled={busy}>{busy ? <T>Saving...</T> : <T>Record payment</T>}</Button>
-      {err && <p role="alert" className="w-full text-sm text-red-600">{err}</p>}
+      {err && <p role="alert" className="w-full text-sm text-red-600"><T>{err}</T></p>}
     </form>
   );
 }

@@ -15,7 +15,7 @@ export function ConsultWorkspace({ appointmentId, consultation, canStart }: { ap
   }
   const num = (f: FormData, k: string) => { const v = String(f.get(k) || ""); return v ? Number(v) : undefined; };
   if (!consultation) {
-    return canStart ? <div><Button disabled={busy} onClick={() => run("Consultation started", () => api("/api/consultations", { body: { appointmentId } }))}>Start consultation</Button>{err && <p role="alert" className="mt-2 text-sm text-red-600">{err}</p>}</div>
+    return canStart ? <div><Button disabled={busy} onClick={() => run("Consultation started", () => api("/api/consultations", { body: { appointmentId } }))}>Start consultation</Button>{err && <p role="alert" className="mt-2 text-sm text-red-600"><T>{err}</T></p>}</div>
       : <p className="text-sm text-muted-foreground"><T>This appointment cannot be started (patient must be checked in or waiting).</T></p>;
   }
   const done = !!consultation.completedAt; const cid = consultation.id;
@@ -46,7 +46,7 @@ export function ConsultWorkspace({ appointmentId, consultation, canStart }: { ap
         <Button disabled={busy} onClick={() => run("Consultation completed and invoice created", () => api(`/api/consultations/${cid}/complete`, { body: {} }))}>Complete consultation</Button>
       </>}
       {done && <p className="text-sm text-green-700"><T>This consultation is completed.</T></p>}
-      {msg && <p role="status" className="text-sm text-green-700">{msg}</p>}{err && <p role="alert" className="text-sm text-red-600">{err}</p>}
+      {msg && <p role="status" className="text-sm text-green-700"><T>{msg}</T></p>}{err && <p role="alert" className="text-sm text-red-600"><T>{err}</T></p>}
     </div>
   );
 }

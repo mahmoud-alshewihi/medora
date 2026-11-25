@@ -17,7 +17,7 @@ Schema (~60 models) and migrations; RBAC matrix; Better Auth sessions; tenant sc
 
 ## NOT finished (do not treat as done)
 - Reports page is basic (summary and appointment cards, doctor and branch tables, CSV export link; no charts or previous-period comparison in the UI). Expenses, staff and settings pages are real ( staff form covers non-doctor roles only, doctor creation is API-only); the data and actions exist only through the API.
-- No interactive UI for: cash close, stock transfer/adjust, purchase orders, patient edit/import forms, portal reschedule, notification centre page, printable prescription/invoice pages, /verify-email page. These work via API and are covered by service-level tests, not UI tests.
+- No interactive UI yet for: stock transfer/adjust (API only), printable invoice page, /verify-email page. Cash close, purchase orders, patient edit/import, portal reschedule, notification centre and printable prescription now have UI (see M10 to M13). Remaining API-only items are covered by service-level tests, not UI tests.
 - Arabic coverage is partial; many authenticated screens are English only.
 - Dockerfile, docker-compose.yml and the GitHub Actions workflow are UNTESTED (no Docker or CI runner here).
 - `npm start` uses `next start` with a standalone build config; it works but Next warns. Use `node .next/standalone/server.js` in containers after copying static assets.
@@ -46,3 +46,9 @@ Fixed the page font (it rendered in a serif fallback), added a nav with icons an
 - Checked by screenshot: Arabic inventory and staff, mobile portal, dark billing.
 - Runs: tsc clean; Playwright 21/21 on a full run before the last small edit (stock-form button, inventory summary), then the stock, Arabic and purchase-order tests re-run and pass (3/3) after it; the full suite was not repeated after that edit.
 - Still not done: Arabic for error/success messages and placeholders, Docker/compose/CI untested here, nothing deployed by me.
+
+## M14 final status (verified this run)
+- Arabic now also covers success/error messages (known phrases and common server errors), the patient search placeholder, search/export buttons and gender cells. Dynamic messages (for example the cash-close result with amounts) and any server error not in the phrase map stay English. Public-site copy outside the dict and PDFs/CSV exports are not translated.
+- Final runs on a freshly seeded DB: tsc clean; eslint 0 errors, 2 warnings (unused imports); vitest 76/76; Playwright 21/21 (no skips), run after the last code edit.
+- Dockerfile, docker-compose.yml and CI workflow: YAML parses and scripts referenced exist; NOT run, because Docker is not available in the build sandbox. CI does not run Playwright.
+- Known limitations: e2e needs a fresh seed (closed cash register blocks payments for the day); purchase orders in the UI have one line per order; no online payment gateway (offline payment recording only), email sends only when RESEND_API_KEY is set, no SMS; load/security testing not performed; accessibility checked only by screenshots and role-based test selectors, no automated audit.

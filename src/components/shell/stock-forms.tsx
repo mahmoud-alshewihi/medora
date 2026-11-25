@@ -30,7 +30,7 @@ export function StockForms({ items, branches, lockBranch }: { items: Opt[]; bran
         <Button type="submit" disabled={busy}>{busy ? <T>Saving...</T> : mode === "receive" ? <T>Receive</T> : <T>Consume</T>}</Button>
       </div>
       {lockBranch && <p className="text-xs text-muted-foreground"><T>Your account is limited to its own branch.</T></p>}
-      {msg && <p role="status" className="text-sm text-green-700">{msg}</p>}{err && <p role="alert" className="text-sm text-red-600">{err}</p>}
+      {msg && <p role="status" className="text-sm text-green-700"><T>{msg}</T></p>}{err && <p role="alert" className="text-sm text-red-600"><T>{err}</T></p>}
     </form>
   );
 }

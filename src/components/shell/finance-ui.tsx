@@ -25,7 +25,7 @@ export function CashCloseForm({ branches }: { branches: Opt[] }) {
         <label className="text-xs"><T>Branch</T><Select name="branchId" className="mt-1 w-44">{branches.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}</Select></label>
         <label className="text-xs"><T>Counted cash</T><Input name="counted" type="number" min="0" step="0.01" required className="mt-1 w-32" /></label>
         <Button type="submit" disabled={busy}>{busy ? <T>Closing...</T> : <T>Close register</T>}</Button>
-        {msg && <p role="status" className="w-full text-sm text-green-700">{msg}</p>}{err && <p role="alert" className="w-full text-sm text-red-600">{err}</p>}
+        {msg && <p role="status" className="w-full text-sm text-green-700"><T>{msg}</T></p>}{err && <p role="alert" className="w-full text-sm text-red-600"><T>{err}</T></p>}
       </form>
     </details>
   );
@@ -50,7 +50,7 @@ export function PurchaseOrderForm({ suppliers, branches, items }: { suppliers: O
         <label className="text-xs"><T>Order quantity</T><Input name="qty" type="number" min="1" step="1" required className="mt-1 w-24" /></label>
         <label className="text-xs"><T>Unit cost</T><Input name="cost" type="number" min="0" step="0.01" required className="mt-1 w-28" /></label>
         <Button type="submit" disabled={busy}>{busy ? <T>Saving...</T> : <T>Create order</T>}</Button>
-        {msg && <p role="status" className="w-full text-sm text-green-700">{msg}</p>}{err && <p role="alert" className="w-full text-sm text-red-600">{err}</p>}
+        {msg && <p role="status" className="w-full text-sm text-green-700"><T>{msg}</T></p>}{err && <p role="alert" className="w-full text-sm text-red-600"><T>{err}</T></p>}
       </form>
     </details>
   );
@@ -63,5 +63,5 @@ export function ReceivePoButton({ id }: { id: string }) {
     setBusy(true); setErr("");
     try { await api(`/api/inventory/purchase-orders/${id}/receive`, { method: "POST", body: {} }); router.refresh(); } catch (x) { setErr(x instanceof Error ? x.message : "Failed"); } finally { setBusy(false); }
   }
-  return <span><Button variant="outline" onClick={go} disabled={busy}><T>Receive</T></Button>{err && <span role="alert" className="ms-2 text-xs text-red-600">{err}</span>}</span>;
+  return <span><Button variant="outline" onClick={go} disabled={busy}><T>Receive</T></Button>{err && <span role="alert" className="ms-2 text-xs text-red-600"><T>{err}</T></span>}</span>;
 }
