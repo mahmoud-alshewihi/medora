@@ -81,7 +81,7 @@ test("doctor runs a consultation to completion and an invoice is created", async
   const db = new PrismaClient();
   const user = await db.user.findUniqueOrThrow({ where: { email: "doctor@nile.medora.test" } });
   const doctor = await db.doctor.findFirstOrThrow({ where: { userId: user.id } });
-  const appt = await db.appointment.findFirstOrThrow({ where: { doctorId: doctor.id, status: "CONFIRMED", invoice: null, consultation: null } });
+  const appt = await db.appointment.findFirstOrThrow({ where: { doctorId: doctor.id, status: { in: ["PENDING", "CONFIRMED"] }, invoice: null, consultation: null } });
   await db.appointment.update({ where: { id: appt.id }, data: { status: "WAITING" } });
   await login(page, "doctor@nile.medora.test");
   await page.waitForURL(/\/doctor/);
@@ -117,5 +117,33 @@ test("accountant refunds part of a payment", async ({ page }) => {
   await page.getByRole("button", { name: "Refund", exact: true }).first().click();
   await expect(page.getByText(/refunded.*10\.00/)).toBeVisible();
   expect(await db.refund.count({ where: { paymentId: pay.id } })).toBe(1);
+  await db.$disconnect();
+});
+
+test("patient books and cancels an appointment in the portal", async ({ page }) => {
+  const { PrismaClient } = await import("@prisma/client");
+  const db = new PrismaClient();
+  const clinic = await db.clinic.findUniqueOrThrow({ where: { slug: "nile-care" } });
+  const sch = await db.doctorSchedule.findFirstOrThrow({ where: { doctor: { clinicId: clinic.id } }, include: { doctor: true } });
+  await login(page, "patient@nile.medora.test");
+  await page.waitForURL(/\/portal/);
+  await page.goto("/portal/book");
+  await page.getByLabel("Branch").selectOption(sch.branchId);
+  await page.getByLabel("Doctor").selectOption(sch.doctorId);
+  let booked = false;
+  for (let i = 3; i < 40 && !booked; i++) {
+    const d = new Date(Date.now() + i * 864e5);
+    if (d.getUTCDay() !== sch.weekday) continue;
+    await page.getByLabel("Date").fill(d.toISOString().slice(0, 10));
+    const slot = page.getByRole("radio").first();
+    if (await slot.waitFor({ timeout: 6000 }).then(() => true, () => false)) { await slot.click(); booked = true; }
+  }
+  expect(booked).toBe(true);
+  await page.getByRole("button", { name: "Book appointment" }).click();
+  await expect(page.getByRole("status")).toContainText("Appointment booked");
+  await page.goto("/portal");
+  page.once("dialog", (dlg) => dlg.accept());
+  await page.getByRole("button", { name: "Cancel" }).first().click();
+  await expect(page.getByText("CANCELLED").first()).toBeVisible();
   await db.$disconnect();
 });
