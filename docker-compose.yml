@@ -1,0 +1,17 @@
+# UNTESTED: written without Docker available in the build sandbox.
+services:
+  db:
+    image: postgres:16
+    environment: { POSTGRES_USER: medora, POSTGRES_PASSWORD: medora, POSTGRES_DB: medora }
+    volumes: [pgdata:/var/lib/postgresql/data]
+    healthcheck: { test: ["CMD-SHELL", "pg_isready -U medora"], interval: 5s, retries: 10 }
+  app:
+    build: .
+    depends_on: { db: { condition: service_healthy } }
+    environment:
+      DATABASE_URL: postgresql://medora:medora@db:5432/medora
+      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:?set a 32+ char secret}
+      BETTER_AUTH_URL: http://localhost:3000
+      NEXT_PUBLIC_APP_URL: http://localhost:3000
+    ports: ["3000:3000"]
+volumes: { pgdata: {} }

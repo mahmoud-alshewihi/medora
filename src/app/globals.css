@@ -1,0 +1,28 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: 210 20% 98%; --foreground: 215 40% 14%; --card: 0 0% 100%; --border: 214 20% 88%;
+  --muted: 210 20% 95%; --muted-foreground: 215 14% 40%; --primary: 175 80% 26%; --primary-foreground: 0 0% 100%;
+  --navy: 218 56% 16%; --danger: 0 72% 45%; --success: 152 60% 30%; --warn: 32 90% 40%;
+}
+.dark {
+  --background: 218 40% 8%; --foreground: 210 20% 94%; --card: 218 36% 12%; --border: 218 22% 22%;
+  --muted: 218 28% 16%; --muted-foreground: 215 14% 68%; --primary: 172 66% 42%; --primary-foreground: 218 56% 8%;
+  --navy: 218 56% 70%; --danger: 0 80% 62%; --success: 152 55% 50%; --warn: 35 90% 58%;
+}
+* { border-color: hsl(var(--border)); }
+body { background: hsl(var(--background)); color: hsl(var(--foreground)); font-family: var(--font-sans), system-ui, sans-serif; }
+:focus-visible { outline: 2px solid hsl(var(--primary)); outline-offset: 2px; }
+@media (prefers-reduced-motion: no-preference) {
+  .fade-in { animation: fade-in .25s ease-out both; }
+  @keyframes fade-in { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+}
+@keyframes pulse-bg { 50% { opacity: .5; } }
+.skeleton { background: hsl(var(--muted)); border-radius: 6px; animation: pulse-bg 1.5s infinite; }
+@media print {
+  .no-print { display: none !important; }
+  body { background: #fff; color: #000; }
+  .print-area { box-shadow: none !important; border: 0 !important; }
+}

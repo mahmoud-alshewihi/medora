@@ -1,0 +1,16 @@
+import { db } from "@/lib/db";
+import { formatMoney } from "@/lib/money";
+import { Badge } from "@/components/ui/primitives";
+import { DataTable } from "@/components/shell/data-table";
+import { pageAccess } from "@/server/auth/page-guard";
+
+export const dynamic = "force-dynamic";
+export default async function BillingPage() {
+  const ctx = await pageAccess("billing.read");
+  const rows = await db.invoice.findMany({ where: { clinicId: ctx.clinicId, ...(ctx.branchId ? { branchId: ctx.branchId } : {}) }, orderBy: { issuedAt: "desc" }, take: 100 });
+  return (
+    <div className="space-y-4"><h1 className="text-2xl font-semibold">Invoices</h1>
+      <DataTable head={["Number", "Patient ref", "Total", "Paid", "Status"]} rows={rows.map((i) => [i.number, i.patientId.slice(0, 8), formatMoney(i.total.toString(), i.currency), formatMoney(i.paidAmount.toString(), i.currency), <Badge key={i.id} value={i.status} />])} />
+    </div>
+  );
+}
