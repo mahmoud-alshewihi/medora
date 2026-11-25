@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { db } from "@/lib/db";
 import { Badge } from "@/components/ui/primitives";
 import { DataTable } from "@/components/shell/data-table";
@@ -13,8 +14,8 @@ export default async function DoctorHome() {
   const rows = await db.appointment.findMany({ where: { doctorId: doctor.id, startsAt: { gte: start, lt: new Date(start.getTime() + 864e5) } }, include: { patient: true }, orderBy: { startsAt: "asc" } });
   return (
     <div className="space-y-4"><AutoRefresh seconds={30} /><h1 className="text-2xl font-semibold">My day</h1>
-      <DataTable empty="No appointments today" head={["Time (UTC)", "Patient", "Status"]} rows={rows.map((a) => [a.startsAt.toISOString().slice(11, 16), a.patient.fullName, <Badge key={a.id} value={a.status} />])} />
-      <p className="text-sm text-muted-foreground">Consultations, prescriptions and lab requests are available through the /api/consultations endpoints; the interactive consultation screen is not built yet.</p>
+      <DataTable empty="No appointments today" head={["Time (UTC)", "Patient", "Status", ""]} rows={rows.map((a) => [a.startsAt.toISOString().slice(11, 16), a.patient.fullName, <Badge key={a.id} value={a.status} />, <Link key={a.id + "c"} className="text-primary underline" href={`/doctor/consult/${a.id}`}>Open</Link>])} />
+      <p className="text-sm text-muted-foreground">Open an appointment to run the consultation, prescribe and complete it.</p>
     </div>
   );
 }

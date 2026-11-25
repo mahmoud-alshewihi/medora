@@ -73,3 +73,31 @@ test("owner opens reports", async ({ page }) => {
   await expect(page.getByText("Net income")).toBeVisible();
   await expect(page.getByRole("columnheader", { name: "Doctor" })).toBeVisible();
 });
+
+test("doctor runs a consultation to completion and an invoice is created", async ({ page }) => {
+  const { PrismaClient } = await import("@prisma/client");
+  const db = new PrismaClient();
+  const user = await db.user.findUniqueOrThrow({ where: { email: "doctor@nile.medora.test" } });
+  const doctor = await db.doctor.findFirstOrThrow({ where: { userId: user.id } });
+  const appt = await db.appointment.findFirstOrThrow({ where: { doctorId: doctor.id, status: "CONFIRMED", invoice: null, consultation: null } });
+  await db.appointment.update({ where: { id: appt.id }, data: { status: "WAITING" } });
+  await login(page, "doctor@nile.medora.test");
+  await page.waitForURL(/\/doctor/);
+  await page.goto(`/doctor/consult/${appt.id}`);
+  await page.getByRole("button", { name: "Start consultation" }).click();
+  await page.getByLabel(/Diagnosis/).fill("Seasonal allergic rhinitis");
+  await page.getByRole("button", { name: "Save notes" }).click();
+  await expect(page.getByRole("status")).toContainText("Notes saved");
+  await page.getByLabel("Medication").fill("Cetirizine");
+  await page.getByLabel("Dosage").fill("10 mg");
+  await page.getByLabel("Frequency").fill("Once daily");
+  await page.getByLabel("Duration").fill("7 days");
+  await page.getByRole("button", { name: "Add prescription" }).click();
+  await expect(page.getByRole("status")).toContainText("Prescription added");
+  await page.getByRole("button", { name: "Complete consultation" }).click();
+  await expect(page.getByText("This consultation is completed.")).toBeVisible();
+  const inv = await db.invoice.findUnique({ where: { appointmentId: appt.id } });
+  expect(inv).not.toBeNull();
+  expect((await db.prescription.count({ where: { consultation: { appointmentId: appt.id } } }))).toBe(1);
+  await db.$disconnect();
+});
