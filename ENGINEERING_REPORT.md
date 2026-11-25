@@ -9,7 +9,7 @@ Honest status. Everything under "Verified" was actually run in the build sandbox
 - `npm run build` (next build): succeeds.
 - Migrations apply; seed runs: 3 clinics, 7 branches, 20 doctors, 36 staff, 500 patients, 1000 appointments, 639 invoices, 538 payments. Seed data is generated demo data, labelled as such.
 - Smoke test against the production server: login works; role redirects verified (owner -> /admin, doctor blocked from /admin, patient -> /portal, super admin -> /platform and blocked from tenant pages, reception -> /reception).
-- Playwright e2e: 10 tests pass (portal booking and cancelling by a patient, refund via UI, public pages, dashboard/patients, role redirect, record payment, add expense, add staff + save settings, reports page, and a doctor consultation: start, save notes, prescribe, complete, with the invoice and prescription confirmed in the DB) using the sandbox's Chrome.
+- Playwright e2e: 13 tests pass (calendar views, stock receive, prescription print access, portal booking and cancelling by a patient, refund via UI, public pages, dashboard/patients, role redirect, record payment, add expense, add staff + save settings, reports page, and a doctor consultation: start, save notes, prescribe, complete, with the invoice and prescription confirmed in the DB) using the sandbox's Chrome.
 - Bug found by tests and fixed: code inside a Prisma transaction used the global client and starved the connection pool under concurrent booking.
 
 ## Built
@@ -17,7 +17,7 @@ Schema (~60 models) and migrations; RBAC matrix; Better Auth sessions; tenant sc
 
 ## NOT finished (do not treat as done)
 - Reports page is basic (summary and appointment cards, doctor and branch tables, CSV export link; no charts or previous-period comparison in the UI). Expenses, staff and settings pages are real ( staff form covers non-doctor roles only, doctor creation is API-only); the data and actions exist only through the API.
-- No interactive UI for: cash close, stock adjust/transfer, purchase orders, appointment calendar (day/week/month grid; only a 7-day list), patient edit/import forms, portal reschedule, notification centre page, printable prescription/invoice pages, /verify-email page. These work via API and are covered by service-level tests, not UI tests.
+- No interactive UI for: cash close, stock transfer/adjust, purchase orders, patient edit/import forms, portal reschedule, notification centre page, printable prescription/invoice pages, /verify-email page. These work via API and are covered by service-level tests, not UI tests.
 - Arabic coverage is partial; many authenticated screens are English only.
 - Dockerfile, docker-compose.yml and the GitHub Actions workflow are UNTESTED (no Docker or CI runner here).
 - `npm start` uses `next start` with a standalone build config; it works but Next warns. Use `node .next/standalone/server.js` in containers after copying static assets.
@@ -27,3 +27,6 @@ Schema (~60 models) and migrations; RBAC matrix; Better Auth sessions; tenant sc
 
 ## Note on the e2e suite
 The e2e tests change the dev database (payments, expenses, staff, consultations, bookings) and the consultation test needs an unconsumed PENDING/CONFIRMED appointment, so re-seed (`npm run db:seed`) before running them repeatedly.
+
+## Design pass (M10)
+Fixed the page font (it rendered in a serif fallback), added a nav with icons and an active state, stacked form labels above inputs, clinic-timezone times instead of UTC, patient names on invoices, status badges, a day/week/month appointment calendar, and a printable prescription page. Checked visually from screenshots of: dashboard, patients, billing, appointments (week, month), inventory, patient portal, booking wizard, landing page. Not visually checked: dark mode after this pass, Arabic/RTL layout after this pass, mobile widths.

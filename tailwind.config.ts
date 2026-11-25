@@ -13,7 +13,7 @@ const config: Config = {
         danger: "hsl(var(--danger))", success: "hsl(var(--success))", warn: "hsl(var(--warn))",
       },
       borderRadius: { DEFAULT: "6px", md: "6px", lg: "8px" },
-      fontFamily: { sans: ["var(--font-sans)", "system-ui", "sans-serif"] },
+      fontFamily: { sans: ["Inter", "Segoe UI", "system-ui", "-apple-system", "Roboto", "Noto Sans Arabic", "Tahoma", "Arial", "sans-serif"] },
     },
   },
   plugins: [],

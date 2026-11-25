@@ -1,3 +1,4 @@
+import { clinicTz, fmtLocal } from "@/lib/clinic-time";
 import { db } from "@/lib/db";
 import { formatMoney } from "@/lib/money";
 import { todayIn } from "@/lib/tz";
@@ -33,7 +34,7 @@ export default async function AdminDashboard({ searchParams }: { searchParams: P
         <Card className="p-4"><h2 className="mb-2 font-medium">Branch performance</h2><BarsChart data={d.branchPerformance.map((x) => ({ name: x.name, revenue: Number(x.revenue), expenses: Number(x.expenses) }))} xKey="name" series={[{ key: "revenue", color: "#0f766e", name: "Revenue" }, { key: "expenses", color: "#1e3a5f", name: "Expenses" }]} /></Card>
       </div>
       <div className="grid gap-4 lg:grid-cols-2">
-        <Card className="p-4"><h2 className="mb-2 font-medium">Upcoming appointments</h2>{d.upcoming.length ? <ul className="divide-y text-sm">{d.upcoming.map((a) => <li key={a.id} className="flex items-center justify-between py-2"><span>{a.patient.fullName} <span className="text-muted-foreground">with {a.doctor.fullName}</span></span><span className="flex items-center gap-2"><span className="text-xs text-muted-foreground">{a.startsAt.toISOString().slice(0, 16).replace("T", " ")} UTC</span><Badge value={a.status} /></span></li>)}</ul> : <EmptyState title="No upcoming appointments" />}</Card>
+        <Card className="p-4"><h2 className="mb-2 font-medium">Upcoming appointments</h2>{d.upcoming.length ? <ul className="divide-y text-sm">{d.upcoming.map((a) => <li key={a.id} className="flex items-center justify-between py-2"><span>{a.patient.fullName} <span className="text-muted-foreground">with {a.doctor.fullName}</span></span><span className="flex items-center gap-2"><span className="text-xs text-muted-foreground">{fmtLocal(a.startsAt, clinic.timezone)}</span><Badge value={a.status} /></span></li>)}</ul> : <EmptyState title="No upcoming appointments" />}</Card>
         <Card className="p-4"><h2 className="mb-2 font-medium">Recent activity</h2>{d.recent.length ? <ul className="divide-y text-sm">{d.recent.map((r) => <li key={r.id} className="flex justify-between py-2"><span>{r.action} <span className="text-muted-foreground">{r.entity}</span></span><span className="text-xs text-muted-foreground">{r.user?.name ?? "system"}</span></li>)}</ul> : <EmptyState title="No activity yet" />}</Card>
       </div>
     </div>

@@ -15,12 +15,12 @@ export const Button = React.forwardRef<HTMLButtonElement, React.ButtonHTMLAttrib
 Button.displayName = "Button";
 
 export const Input = React.forwardRef<HTMLInputElement, React.InputHTMLAttributes<HTMLInputElement>>(({ className, ...p }, ref) => (
-  <input ref={ref} className={cn("h-10 w-full rounded-md border bg-card px-3 text-sm placeholder:text-muted-foreground disabled:opacity-60", className)} {...p} />
+  <input ref={ref} className={cn("block h-10 w-full rounded-md border bg-card px-3 text-sm placeholder:text-muted-foreground disabled:opacity-60", className)} {...p} />
 ));
 Input.displayName = "Input";
 
 export const Select = React.forwardRef<HTMLSelectElement, React.SelectHTMLAttributes<HTMLSelectElement>>(({ className, ...p }, ref) => (
-  <select ref={ref} className={cn("h-10 w-full rounded-md border bg-card px-2 text-sm", className)} {...p} />
+  <select ref={ref} className={cn("block h-10 w-full rounded-md border bg-card px-2 text-sm", className)} {...p} />
 ));
 Select.displayName = "Select";
 

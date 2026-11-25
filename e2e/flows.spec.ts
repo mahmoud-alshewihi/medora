@@ -147,3 +147,42 @@ test("patient books and cancels an appointment in the portal", async ({ page }) 
   await expect(page.getByText("CANCELLED").first()).toBeVisible();
   await db.$disconnect();
 });
+
+test("owner switches calendar views", async ({ page }) => {
+  await login(page, "owner@nile.medora.test");
+  await page.waitForURL(/\/admin/);
+  await page.goto("/admin/appointments?view=week");
+  await expect(page.getByText(/Week of/)).toBeVisible();
+  await page.getByRole("link", { name: "month", exact: true }).click();
+  await expect(page.getByText("Sun", { exact: true })).toBeVisible();
+  await page.getByRole("link", { name: "day", exact: true }).click();
+  await expect(page.getByRole("columnheader", { name: "Patient" }).or(page.getByText("No appointments on this day"))).toBeVisible();
+});
+
+test("owner receives stock and sees it in the table", async ({ page }) => {
+  await login(page, "owner@nile.medora.test");
+  await page.waitForURL(/\/admin/);
+  await page.goto("/admin/inventory");
+  await page.getByLabel("Quantity").fill("7");
+  await page.getByLabel("Batch number").fill("E2E-" + Date.now());
+  await page.getByRole("button", { name: "Receive", exact: true }).click();
+  await expect(page.getByRole("status")).toContainText("Stock received");
+});
+
+test("prescription prints for the patient who owns it and is hidden from others", async ({ page, browser }) => {
+  const { PrismaClient } = await import("@prisma/client");
+  const db = new PrismaClient();
+  const rx = await db.prescription.findFirstOrThrow({ where: { patient: { userId: { not: null } } } });
+  const pat = await db.patient.findUniqueOrThrow({ where: { id: rx.patientId } });
+  const usr = await db.user.findUniqueOrThrow({ where: { id: pat.userId! } });
+  await db.$disconnect();
+  await login(page, usr.email);
+  await page.waitForURL(/\/portal/);
+  await page.goto(`/print/prescription/${rx.id}`);
+  await expect(page.getByText(rx.number)).toBeVisible();
+  await expect(page.getByRole("button", { name: "Print" })).toBeVisible();
+  const other = await browser.newContext(); const p2 = await other.newPage();
+  const r = await p2.goto(`/print/prescription/${rx.id}`);
+  expect(p2.url()).toContain("/login"); expect(r?.status()).toBeLessThan(400);
+  await other.close();
+});

@@ -1,3 +1,4 @@
+import { clinicTz, fmtLocal } from "@/lib/clinic-time";
 import Link from "next/link";
 import { db } from "@/lib/db";
 import { Badge } from "@/components/ui/primitives";
@@ -11,10 +12,11 @@ export default async function DoctorHome() {
   const ctx = await pageRole("DOCTOR");
   const doctor = await doctorFor({ ...ctx, clinicId: ctx.clinicId! });
   const start = new Date(); start.setUTCHours(0, 0, 0, 0);
+  const tz = await clinicTz(ctx.clinicId!);
   const rows = await db.appointment.findMany({ where: { doctorId: doctor.id, startsAt: { gte: start, lt: new Date(start.getTime() + 864e5) } }, include: { patient: true }, orderBy: { startsAt: "asc" } });
   return (
     <div className="space-y-4"><AutoRefresh seconds={30} /><h1 className="text-2xl font-semibold">My day</h1>
-      <DataTable empty="No appointments today" head={["Time (UTC)", "Patient", "Status", ""]} rows={rows.map((a) => [a.startsAt.toISOString().slice(11, 16), a.patient.fullName, <Badge key={a.id} value={a.status} />, <Link key={a.id + "c"} className="text-primary underline" href={`/doctor/consult/${a.id}`}>Open</Link>])} />
+      <DataTable empty="No appointments today" head={["Time", "Patient", "Status", ""]} rows={rows.map((a) => [fmtLocal(a.startsAt, tz).slice(11), a.patient.fullName, <Badge key={a.id} value={a.status} />, <Link key={a.id + "c"} className="text-primary underline" href={`/doctor/consult/${a.id}`}>Open</Link>])} />
       <p className="text-sm text-muted-foreground">Open an appointment to run the consultation, prescribe and complete it.</p>
     </div>
   );
