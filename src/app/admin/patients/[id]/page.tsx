@@ -1,17 +1,24 @@
 import { notFound } from "next/navigation";
-import { Card } from "@/components/ui/primitives";
+import { Badge, Card } from "@/components/ui/primitives";
+import { DataTable } from "@/components/shell/data-table";
 import { pageAccess } from "@/server/auth/page-guard";
 import { getPatientProfile } from "@/server/patients/service";
 
 export const dynamic = "force-dynamic";
+type Appt = { id: string; startsAt: Date; status: string; doctor: string; branch: string };
+type Billing = { outstanding: string; invoices: { id: string; number: string; status: string; total: string }[] } | null;
 export default async function PatientProfile({ params }: { params: Promise<{ id: string }> }) {
   const ctx = await pageAccess("patient.read"); const { id } = await params;
   const p = await getPatientProfile(ctx, id).catch(() => null);
   if (!p) notFound();
+  const appts = p.appointments as Appt[]; const billing = p.billing as Billing;
   return (
     <div className="space-y-4"><h1 className="text-2xl font-semibold">{String(p.fullName)} <span className="text-sm text-muted-foreground">{String(p.mrn)}</span></h1>
-      <Card className="p-4"><pre className="whitespace-pre-wrap text-xs">{JSON.stringify({ gender: p.gender, phone: p.phone, email: p.email, dateOfBirth: p.dateOfBirth, appointments: p.appointments, billing: p.billing }, null, 2)}</pre></Card>
-      <p className="text-sm text-muted-foreground">Medical history is shown only to users with medical access and is audited.</p>
+      <Card className="grid gap-1 p-4 text-sm md:grid-cols-2"><p>Gender: {String(p.gender)}</p><p>Phone: {String(p.phone)}</p><p>Email: {String(p.email ?? "-")}</p><p>Date of birth: {p.dateOfBirth ? new Date(p.dateOfBirth as Date).toISOString().slice(0, 10) : "-"}</p></Card>
+      <h2 className="font-medium">Appointments</h2>
+      <DataTable head={["When (UTC)", "Doctor", "Branch", "Status"]} rows={appts.map((a) => [new Date(a.startsAt).toISOString().slice(0, 16).replace("T", " "), a.doctor, a.branch, <Badge key={a.id} value={a.status} />])} />
+      {billing && <><h2 className="font-medium">Invoices (outstanding {billing.outstanding})</h2><DataTable head={["Number", "Total", "Status"]} rows={billing.invoices.map((i) => [i.number, i.total, <Badge key={i.id} value={i.status} />])} /></>}
+      <p className="text-sm text-muted-foreground">{p.medicalAccess ? "Medical history is visible to you and each view is audited (full record via the API)." : "Medical history is not visible to your role."}</p>
     </div>
   );
 }

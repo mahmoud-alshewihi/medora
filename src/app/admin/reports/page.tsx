@@ -26,10 +26,10 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
     <div className="space-y-5"><div className="flex items-end justify-between"><h1 className="text-2xl font-semibold">Reports</h1><a className="no-print text-sm underline" href={`/api/reports/export?${q}`}>Export CSV</a></div>
       <ReportFilters action="/admin/reports" from={from} to={to} branchId={sp.branchId} doctorId={sp.doctorId} branches={branches} doctors={doctorsList} lockBranch={!!ctx.branchId} />
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">{([["Revenue (net of refunds)", m(fin.revenue)], ["Refunds", m(fin.refunds)], ["Expenses", m(fin.expenses)], ["Net income", m(fin.net)], ["Outstanding", m(fin.outstanding)]] as [string, string][]).map(([k, v]) => <Card key={k} className="p-3"><p className="text-xs text-muted-foreground">{k}</p><p className="mt-1 text-xl font-semibold">{v}</p></Card>)}</div>
-      <p className="text-xs text-muted-foreground">Appointments in range: <code>{JSON.stringify(appts)}</code></p>
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">{([["Appointments", appts.total], ["Completed", appts.completed], ["Cancelled", appts.cancelled], ["No-show", appts.noShow], ["Cancellation rate", appts.cancellationRate + "%"]] as [string, string | number][]).map(([k, v]) => <Card key={k} className="p-3"><p className="text-xs text-muted-foreground">{k}</p><p className="mt-1 text-xl font-semibold">{v}</p></Card>)}</div>
       <h2 className="font-medium">Doctors</h2><DataTable head={["Doctor", "Completed", "Cancelled"]} rows={docs.map((d) => [d.name, d.completed, d.cancelled])} />
       <h2 className="font-medium">Branches</h2><DataTable head={["Branch", "Revenue", "Expenses"]} rows={brs.map((d) => [d.name, m(String(d.revenue)), m(String(d.expenses))])} />
-      <h2 className="font-medium">Payment methods</h2><DataTable head={["Data"]} rows={methods.map((d, i) => [<code key={i} className="text-xs">{JSON.stringify(d)}</code>])} />
+      <h2 className="font-medium">Payment methods</h2><DataTable head={["Method", "Payments", "Amount"]} rows={methods.map((d) => [d.method.replace(/_/g, " "), d.count, m(d.amount)])} />
     </div>
   );
 }

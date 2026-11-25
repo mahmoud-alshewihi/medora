@@ -71,6 +71,8 @@ test("owner opens reports", async ({ page }) => {
   await page.goto("/admin/reports");
   await expect(page.getByRole("heading", { name: "Reports" })).toBeVisible();
   await expect(page.getByText("Net income")).toBeVisible();
+  await expect(page.getByText("Cancellation rate")).toBeVisible();
+  await expect(page.locator("code")).toHaveCount(0);
   await expect(page.getByRole("columnheader", { name: "Doctor" })).toBeVisible();
 });
 
@@ -99,5 +101,21 @@ test("doctor runs a consultation to completion and an invoice is created", async
   const inv = await db.invoice.findUnique({ where: { appointmentId: appt.id } });
   expect(inv).not.toBeNull();
   expect((await db.prescription.count({ where: { consultation: { appointmentId: appt.id } } }))).toBe(1);
+  await db.$disconnect();
+});
+
+test("accountant refunds part of a payment", async ({ page }) => {
+  const { PrismaClient } = await import("@prisma/client");
+  const db = new PrismaClient();
+  const clinic = await db.clinic.findUniqueOrThrow({ where: { slug: "nile-care" } });
+  const pay = await db.payment.findFirstOrThrow({ where: { clinicId: clinic.id, amount: { gte: 50 }, refunds: { none: {} } }, include: { invoice: true } });
+  await login(page, "accountant@nile.medora.test");
+  await page.waitForURL(/\/admin/);
+  await page.goto(`/admin/billing/${pay.invoiceId}`);
+  await page.getByLabel(`Refund amount ${pay.id}`).fill("10.00");
+  await page.getByLabel(`Refund reason ${pay.id}`).fill("E2E partial refund");
+  await page.getByRole("button", { name: "Refund", exact: true }).first().click();
+  await expect(page.getByText(/refunded.*10\.00/)).toBeVisible();
+  expect(await db.refund.count({ where: { paymentId: pay.id } })).toBe(1);
   await db.$disconnect();
 });
