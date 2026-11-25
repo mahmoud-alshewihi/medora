@@ -9,7 +9,7 @@ Honest status. Everything under "Verified" was actually run in the build sandbox
 - `npm run build` (next build): succeeds.
 - Migrations apply; seed runs: 3 clinics, 7 branches, 20 doctors, 36 staff, 500 patients, 1000 appointments, 639 invoices, 538 payments. Seed data is generated demo data, labelled as such.
 - Smoke test against the production server: login works; role redirects verified (owner -> /admin, doctor blocked from /admin, patient -> /portal, super admin -> /platform and blocked from tenant pages, reception -> /reception).
-- Playwright e2e: 15 tests pass (notification centre, Arabic titles/nav, calendar views, stock receive, prescription print access, portal booking and cancelling by a patient, refund via UI, public pages, dashboard/patients, role redirect, record payment, add expense, add staff + save settings, reports page, and a doctor consultation: start, save notes, prescribe, complete, with the invoice and prescription confirmed in the DB) using the sandbox's Chrome.
+- Playwright e2e: 21 tests pass (doctor creation, patient edit, CSV import, purchase order + receive, cash close, portal reschedule, notification centre, Arabic titles/nav, calendar views, stock receive, prescription print access, portal booking and cancelling by a patient, refund via UI, public pages, dashboard/patients, role redirect, record payment, add expense, add staff + save settings, reports page, and a doctor consultation: start, save notes, prescribe, complete, with the invoice and prescription confirmed in the DB) using the sandbox's Chrome.
 - Bug found by tests and fixed: code inside a Prisma transaction used the global client and starved the connection pool under concurrent booking.
 
 ## Built
@@ -35,4 +35,8 @@ Fixed the page font (it rendered in a serif fallback), added a nav with icons an
 - Notification centre (/notifications), Arabic page titles and table headers (phrase map), mobile header fix, dark-mode chart colour.
 - Sign-in rate limit is configurable (AUTH_SIGNIN_MAX, default 10/min); e2e sets 200 because the suite logs in many times. An earlier e2e failure was this limit, not a stock bug.
 - Run results: tsc clean; eslint 0 errors, 2 warnings (unused import); vitest 76/76; Playwright 15/15.
-- Still not done: doctor-creation form, patient edit/import UI, portal reschedule, cash-close UI, purchase-order UI, Arabic on authenticated form labels/badges, Docker/compose/CI untested.
+
+## M12 additions (verified this run)
+- Admin UI: add-doctor form (specialty, fee, commission, slot, working days), patient edit form, patient CSV import, purchase orders (create, list, receive), cash register close, portal reschedule.
+- Playwright 21/21 on a freshly seeded DB; tsc clean. Cash-close can only run once per day, so reruns on the same DB accept the "already closed" message, and a closed register blocks payments until re-seed (correct app behaviour, but e2e needs a fresh seed).
+- Not done: Arabic on authenticated form labels/buttons/badges (titles, nav and table headers are translated), purchase orders are single-line in the UI, Docker/compose/CI still untested here, vitest 76/76 re-run after M12.

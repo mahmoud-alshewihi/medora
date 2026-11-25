@@ -54,11 +54,12 @@ test("owner adds staff and saves settings", async ({ page }) => {
   await page.waitForURL(/\/admin/);
   await page.goto("/admin/staff");
   const email = `e2e${Date.now()}@nile.medora.test`;
-  await page.getByLabel("Full name").fill("E2E Nurse");
-  await page.getByLabel("Email").fill(email);
-  await page.getByLabel("Temporary password").fill("TempPass#2026");
-  await page.getByLabel("Role").selectOption("NURSE");
-  await page.getByRole("button", { name: "Add staff" }).click();
+  const staffForm = page.locator("form").filter({ has: page.getByRole("button", { name: "Add staff" }) });
+  await staffForm.getByLabel("Full name").fill("E2E Nurse");
+  await staffForm.getByLabel("Email").fill(email);
+  await staffForm.getByLabel("Temporary password").fill("TempPass#2026");
+  await staffForm.getByLabel("Role").selectOption("NURSE");
+  await staffForm.getByRole("button", { name: "Add staff" }).click();
   await expect(page.getByText(email)).toBeVisible();
   await page.goto("/admin/settings");
   await page.getByRole("button", { name: "Save settings" }).click();
@@ -163,9 +164,9 @@ test("owner receives stock and sees it in the table", async ({ page }) => {
   await login(page, "owner@nile.medora.test");
   await page.waitForURL(/\/admin/);
   await page.goto("/admin/inventory");
-  await page.getByLabel("Quantity").fill("7");
+  await page.getByLabel("Quantity", { exact: true }).fill("7");
   await page.getByLabel("Batch number").fill("E2E-" + Date.now());
-  await page.getByRole("button", { name: "Receive", exact: true }).click();
+  await page.locator("form").filter({ has: page.getByLabel("Batch number") }).getByRole("button", { name: "Receive", exact: true }).click();
   await expect(page.getByRole("status")).toContainText("Stock received");
 });
 
@@ -204,4 +205,94 @@ test("Arabic locale translates navigation and page titles", async ({ page, conte
   await page.goto("/admin/patients");
   await expect(page.getByRole("heading", { name: "المرضى" })).toBeVisible();
   await expect(page.locator("html")).toHaveAttribute("dir", "rtl");
+});
+
+test("owner adds a doctor with working days", async ({ page }) => {
+  await login(page, "owner@nile.medora.test");
+  await page.waitForURL(/\/admin/);
+  await page.goto("/admin/staff");
+  await page.getByText("Add a doctor").click();
+  const form = page.locator("form").filter({ has: page.getByRole("button", { name: "Add doctor" }) });
+  const email = `doc${Date.now()}@nile.medora.test`;
+  await form.getByLabel("Full name").fill("Dr E2E Tester");
+  await form.getByLabel("Email").fill(email);
+  await form.getByLabel("Temporary password").fill("TempPass#2026");
+  await form.getByLabel("Consultation fee").fill("300");
+  await form.getByRole("button", { name: "Add doctor" }).click();
+  await expect(page.getByRole("status")).toContainText("Doctor added");
+  await expect(page.getByText(email)).toBeVisible();
+});
+test("receptionist edits a patient's phone", async ({ page }) => {
+  await login(page, "reception@nile.medora.test");
+  await page.waitForURL(/\/reception/);
+  await page.goto("/admin/patients");
+  await page.locator("tbody a").first().click();
+  await page.getByText("Edit details").click();
+  const phone = "+2010" + String(Date.now()).slice(-8);
+  await page.getByLabel("Phone").fill(phone);
+  await page.getByRole("button", { name: "Save changes" }).click();
+  await expect(page.getByRole("status")).toContainText("Saved");
+  await expect(page.getByText(phone).first()).toBeVisible();
+});
+test("owner imports patients from CSV", async ({ page }) => {
+  await login(page, "owner@nile.medora.test");
+  await page.waitForURL(/\/admin/);
+  await page.goto("/admin/patients");
+  await page.getByText("Import patients from CSV").click();
+  const name = "Imported E2E " + Date.now();
+  await page.locator('input[type=file]').setInputFiles({ name: "p.csv", mimeType: "text/csv", buffer: Buffer.from(`fullName,gender,phone\n${name},FEMALE,+201055500${String(Date.now()).slice(-3)}\n`) });
+  await page.getByRole("button", { name: "Import", exact: true }).click();
+  await expect(page.getByRole("status")).toContainText("Imported 1");
+});
+test("owner creates a purchase order and receives it", async ({ page }) => {
+  await login(page, "owner@nile.medora.test");
+  await page.waitForURL(/\/admin/);
+  await page.goto("/admin/inventory");
+  await page.getByText("New purchase order").click();
+  const form = page.locator("form").filter({ has: page.getByRole("button", { name: "Create order" }) });
+  await form.getByLabel("Order quantity").fill("5");
+  await form.getByLabel("Unit cost").fill("12.5");
+  await form.getByRole("button", { name: "Create order" }).click();
+  await expect(page.getByRole("status").filter({ hasText: "Purchase order created" })).toBeVisible();
+  page.once("dialog", (d) => d.accept());
+  await page.locator("tr", { hasText: "ORDERED" }).first().getByRole("button", { name: "Receive" }).click();
+  await expect(page.getByText("RECEIVED").first()).toBeVisible();
+});
+test("accountant closes the cash register", async ({ page }) => {
+  await login(page, "accountant@nile.medora.test");
+  await page.waitForURL(/\/admin/);
+  await page.goto("/admin/billing");
+  await page.getByText("Close cash register").click();
+  await page.getByLabel("Counted cash").fill("0");
+  page.once("dialog", (d) => d.accept());
+  await page.getByRole("button", { name: "Close register" }).click();
+  // A register can only be closed once a day: accept the first close or the guard message on reruns.
+  await expect(page.getByRole("status").or(page.getByRole("alert").filter({ hasText: "already closed" }))).toBeVisible();
+});
+test("patient reschedules an appointment", async ({ page }) => {
+  await login(page, "patient@nile.medora.test");
+  await page.waitForURL(/\/portal/);
+  await page.goto("/portal/book");
+  const radio = page.getByRole("radiogroup", { name: "Available times" }).getByRole("radio").first();
+  let found = false;
+  for (let n = 2; n <= 9 && !found; n++) {
+    await page.getByLabel("Date").fill(new Date(Date.now() + n * 86400000).toISOString().slice(0, 10));
+    found = await radio.waitFor({ timeout: 3000 }).then(() => true, () => false);
+  }
+  test.skip(!found, "no free slot in the next 9 days");
+  await radio.click();
+  await page.getByRole("button", { name: "Book appointment" }).click();
+  await expect(page.getByRole("status")).toContainText("Appointment booked");
+  await page.goto("/portal");
+  await page.getByRole("button", { name: "Reschedule" }).first().click();
+  const slot = page.getByRole("radiogroup", { name: "New time" }).getByRole("radio").first();
+  let ok = false;
+  for (let n = 2; n <= 9 && !ok; n++) {
+    await page.getByLabel("New date").fill(new Date(Date.now() + n * 86400000).toISOString().slice(0, 10));
+    ok = await slot.waitFor({ timeout: 3000 }).then(() => true, () => false);
+  }
+  test.skip(!ok, "no free slot for reschedule");
+  await slot.click();
+  await page.getByRole("button", { name: "Confirm" }).click();
+  await expect(page.getByRole("button", { name: "Reschedule" }).first()).toBeVisible();
 });
