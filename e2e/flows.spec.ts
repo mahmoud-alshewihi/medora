@@ -37,3 +37,30 @@ test("accountant records a payment from the invoice page", async ({ page }) => {
   await expect(page.getByText(/RCT-\d+/).first()).toBeVisible();
   await expect(page.getByText("Record payment")).toHaveCount(0);
 });
+
+test("accountant adds an expense", async ({ page }) => {
+  await login(page, "accountant@nile.medora.test");
+  await page.waitForURL(/\/admin/);
+  await page.goto("/admin/expenses");
+  const desc = "E2E expense " + Date.now();
+  await page.getByLabel("Description").fill(desc);
+  await page.getByLabel("Amount").fill("125.50");
+  await page.getByRole("button", { name: "Add expense" }).click();
+  await expect(page.getByText(desc)).toBeVisible();
+});
+
+test("owner adds staff and saves settings", async ({ page }) => {
+  await login(page, "owner@nile.medora.test");
+  await page.waitForURL(/\/admin/);
+  await page.goto("/admin/staff");
+  const email = `e2e${Date.now()}@nile.medora.test`;
+  await page.getByLabel("Full name").fill("E2E Nurse");
+  await page.getByLabel("Email").fill(email);
+  await page.getByLabel("Temporary password").fill("TempPass#2026");
+  await page.getByLabel("Role").selectOption("NURSE");
+  await page.getByRole("button", { name: "Add staff" }).click();
+  await expect(page.getByText(email)).toBeVisible();
+  await page.goto("/admin/settings");
+  await page.getByRole("button", { name: "Save settings" }).click();
+  await expect(page.getByRole("status")).toContainText("Settings saved");
+});
