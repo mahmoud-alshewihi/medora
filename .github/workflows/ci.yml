@@ -12,6 +12,7 @@ jobs:
     env:
       DATABASE_URL: postgresql://medora:medora@localhost:5432/medora_test
       TEST_DATABASE_URL: postgresql://medora:medora@localhost:5432/medora_test
+      HTTP_TEST_DATABASE_URL: postgresql://medora:medora@localhost:5432/medora_http_test
       BETTER_AUTH_SECRET: ci-secret-ci-secret-ci-secret-ci-secret
       BETTER_AUTH_URL: http://localhost:3000
     steps:
@@ -20,7 +21,40 @@ jobs:
         with: { node-version: 22, cache: npm }
       - run: npm ci
       - run: npx prisma generate
+      - run: psql -U medora -h localhost -c "CREATE DATABASE medora_http_test" || true
+        env: { PGPASSWORD: medora }
       - run: npm run lint
       - run: npm run typecheck
       - run: npm test
+        # build must come before the HTTP suite: tests serve .next output
       - run: npm run build
+      - run: npm run test:http
+  e2e:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env: { POSTGRES_USER: medora, POSTGRES_PASSWORD: medora, POSTGRES_DB: medora }
+        ports: ["5432:5432"]
+        options: --health-cmd "pg_isready -U medora" --health-interval 5s --health-retries 10
+    env:
+      DATABASE_URL: postgresql://medora:medora@localhost:5432/medora
+      BETTER_AUTH_SECRET: ci-secret-ci-secret-ci-secret-ci-secret
+      BETTER_AUTH_URL: http://localhost:3000
+      NEXT_PUBLIC_APP_URL: http://localhost:3000
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm }
+      - run: npm ci
+      - run: npx prisma generate
+      - run: npx prisma migrate deploy
+      - run: npm run db:seed
+      - run: npx playwright install --with-deps chromium
+      - run: npx tsx scripts/e2e-prep.mts || true
+      - run: npx playwright test
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build -t medora:ci .

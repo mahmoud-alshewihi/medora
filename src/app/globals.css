@@ -2,25 +2,163 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ─────────────────────────────────────────────────────────────
+   Medora design tokens v2
+   Healthcare-inspired palette: deep teal primary, ink-navy text,
+   calm neutral surfaces. Dark theme is designed, not inverted.
+   ───────────────────────────────────────────────────────────── */
 :root {
-  --background: 210 20% 98%; --foreground: 215 40% 14%; --card: 0 0% 100%; --border: 214 20% 88%;
-  --muted: 210 20% 95%; --muted-foreground: 215 14% 40%; --primary: 175 80% 26%; --primary-foreground: 0 0% 100%;
-  --navy: 218 56% 16%; --danger: 0 72% 45%; --success: 152 60% 30%; --warn: 32 90% 40%;
+  /* surfaces */
+  --background: 210 27% 97%;
+  --foreground: 220 39% 12%;
+  --card: 0 0% 100%;
+  --card-foreground: 220 39% 12%;
+  --muted: 210 24% 94%;
+  --muted-foreground: 216 13% 42%;
+  --border: 214 20% 88%;
+  --input: 214 20% 84%;
+
+  /* brand */
+  --primary: 178 72% 27%;
+  --primary-strong: 178 76% 22%;
+  --primary-soft: 178 55% 93%;
+  --primary-foreground: 0 0% 100%;
+  --navy: 218 56% 16%;
+  --ring: 178 72% 34%;
+
+  /* semantic */
+  --success: 158 66% 30%;
+  --success-soft: 152 48% 92%;
+  --warn: 34 92% 36%;
+  --warn-soft: 38 90% 92%;
+  --danger: 0 70% 44%;
+  --danger-soft: 0 70% 95%;
+  --info: 210 88% 42%;
+  --info-soft: 210 80% 94%;
+
+  /* charts */
+  --chart-1: 178 72% 32%;
+  --chart-2: 218 56% 30%;
+  --chart-3: 38 88% 48%;
+  --chart-4: 0 70% 52%;
+  --chart-5: 262 40% 52%;
+
+  /* elevation */
+  --shadow-xs: 0 1px 2px 0 rgb(16 24 40 / 0.05);
+  --shadow-sm: 0 1px 2px 0 rgb(16 24 40 / 0.06), 0 1px 3px 0 rgb(16 24 40 / 0.05);
+  --shadow-md: 0 2px 4px -1px rgb(16 24 40 / 0.06), 0 6px 14px -4px rgb(16 24 40 / 0.08);
+  --shadow-lg: 0 4px 6px -2px rgb(16 24 40 / 0.05), 0 14px 28px -6px rgb(16 24 40 / 0.12);
+  --shadow-xl: 0 8px 12px -4px rgb(16 24 40 / 0.08), 0 24px 48px -12px rgb(16 24 40 / 0.18);
+
+  /* motion */
+  --dur-fast: 120ms;
+  --dur-med: 200ms;
+  --dur-slow: 320ms;
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+
+  color-scheme: light;
 }
+
 .dark {
-  --background: 218 40% 8%; --foreground: 210 20% 94%; --card: 218 36% 12%; --border: 218 22% 22%;
-  --muted: 218 28% 16%; --muted-foreground: 215 14% 68%; --primary: 172 66% 42%; --primary-foreground: 218 56% 8%;
-  --navy: 218 56% 70%; --danger: 0 80% 62%; --success: 152 55% 50%; --warn: 35 90% 58%;
+  --background: 222 34% 7%;
+  --foreground: 213 27% 92%;
+  --card: 220 30% 10.5%;
+  --card-foreground: 213 27% 92%;
+  --muted: 219 24% 15%;
+  --muted-foreground: 216 12% 62%;
+  --border: 218 18% 19%;
+  --input: 218 18% 26%;
+
+  --primary: 176 58% 42%;
+  --primary-strong: 176 62% 50%;
+  --primary-soft: 178 50% 14%;
+  --primary-foreground: 222 47% 6%;
+  --navy: 217 50% 72%;
+  --ring: 176 58% 46%;
+
+  --success: 158 55% 46%;
+  --success-soft: 158 45% 13%;
+  --warn: 38 90% 56%;
+  --warn-soft: 38 60% 15%;
+  --danger: 0 78% 62%;
+  --danger-soft: 0 55% 15%;
+  --info: 208 90% 62%;
+  --info-soft: 210 60% 15%;
+
+  --chart-1: 176 58% 46%;
+  --chart-2: 217 70% 66%;
+  --chart-3: 38 90% 58%;
+  --chart-4: 0 78% 64%;
+  --chart-5: 262 55% 68%;
+
+  --shadow-xs: 0 1px 2px 0 rgb(0 0 0 / 0.4);
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.5), 0 1px 3px 0 rgb(0 0 0 / 0.4);
+  --shadow-md: 0 2px 4px -1px rgb(0 0 0 / 0.5), 0 6px 14px -4px rgb(0 0 0 / 0.5);
+  --shadow-lg: 0 4px 6px -2px rgb(0 0 0 / 0.5), 0 14px 28px -6px rgb(0 0 0 / 0.55);
+  --shadow-xl: 0 8px 12px -4px rgb(0 0 0 / 0.55), 0 24px 48px -12px rgb(0 0 0 / 0.65);
+
+  color-scheme: dark;
 }
+
 * { border-color: hsl(var(--border)); }
-body { background: hsl(var(--background)); color: hsl(var(--foreground)); font-family: Inter, "Segoe UI", system-ui, -apple-system, Roboto, "Noto Sans Arabic", Tahoma, Arial, sans-serif; -webkit-font-smoothing: antialiased; }
-:focus-visible { outline: 2px solid hsl(var(--primary)); outline-offset: 2px; }
-@media (prefers-reduced-motion: no-preference) {
-  .fade-in { animation: fade-in .25s ease-out both; }
-  @keyframes fade-in { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: hsl(var(--background));
+  color: hsl(var(--foreground));
+  font-family: Inter, "Segoe UI", system-ui, -apple-system, Roboto, "Noto Sans Arabic", Tahoma, Arial, sans-serif;
+  font-feature-settings: "cv02", "cv03", "cv04", "ss01";
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
-@keyframes pulse-bg { 50% { opacity: .5; } }
+
+::selection { background: hsl(var(--primary) / 0.22); }
+
+:focus-visible { outline: 2px solid hsl(var(--ring)); outline-offset: 2px; border-radius: 4px; }
+
+/* thin, quiet scrollbars */
+* { scrollbar-width: thin; scrollbar-color: hsl(var(--muted-foreground) / 0.35) transparent; }
+*::-webkit-scrollbar { width: 8px; height: 8px; }
+*::-webkit-scrollbar-thumb { background: hsl(var(--muted-foreground) / 0.3); border-radius: 8px; }
+*::-webkit-scrollbar-track { background: transparent; }
+
+/* tabular numerals for figures */
+.tnum { font-variant-numeric: tabular-nums; }
+
+/* elevation helpers */
+.shadow-xs { box-shadow: var(--shadow-xs); }
+.shadow-sm { box-shadow: var(--shadow-sm); }
+.shadow-md { box-shadow: var(--shadow-md); }
+.shadow-lg { box-shadow: var(--shadow-lg); }
+.shadow-xl { box-shadow: var(--shadow-xl); }
+
+@media (prefers-reduced-motion: no-preference) {
+  .fade-in { animation: fade-in var(--dur-med) var(--ease-out) both; }
+  @keyframes fade-in { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+  .slide-in-right { animation: slide-in-right var(--dur-slow) var(--ease-out) both; }
+  @keyframes slide-in-right { from { opacity: 0; transform: translateX(16px); } to { opacity: 1; transform: none; } }
+  [dir="rtl"] .slide-in-right { animation-name: slide-in-left; }
+  @keyframes slide-in-left { from { opacity: 0; transform: translateX(-16px); } to { opacity: 1; transform: none; } }
+  .zoom-in { animation: zoom-in var(--dur-med) var(--ease-out) both; }
+  @keyframes zoom-in { from { opacity: 0; transform: translate(-50%, -50%) scale(0.97); } to { opacity: 1; transform: translate(-50%, -50%) scale(1); } }
+  .overlay-in { animation: overlay-in var(--dur-fast) ease-out both; }
+  @keyframes overlay-in { from { opacity: 0; } to { opacity: 1; } }
+  .sheet-in { animation: sheet-in var(--dur-slow) var(--ease-out) both; }
+  @keyframes sheet-in { from { transform: translateX(100%); } to { transform: none; } }
+  [dir="rtl"] .sheet-in { animation-name: sheet-in-rtl; }
+  @keyframes sheet-in-rtl { from { transform: translateX(-100%); } to { transform: none; } }
+}
+
+@keyframes pulse-bg { 50% { opacity: 0.5; } }
 .skeleton { background: hsl(var(--muted)); border-radius: 6px; animation: pulse-bg 1.5s infinite; }
+
+/* subtle dotted texture used on marketing hero surfaces */
+.dot-grid {
+  background-image: radial-gradient(hsl(var(--foreground) / 0.07) 1px, transparent 1px);
+  background-size: 22px 22px;
+}
+
 @media print {
   .no-print { display: none !important; }
   body { background: #fff; color: #000; }

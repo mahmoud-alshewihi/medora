@@ -16,10 +16,15 @@ export const staffInput = z.object({
     schedules: z.array(z.object({ branchId: z.string(), weekday: z.number().int().min(0).max(6), startTime: z.string().regex(/^\d{2}:\d{2}$/), endTime: z.string().regex(/^\d{2}:\d{2}$/), breakStart: z.string().regex(/^\d{2}:\d{2}$/).optional(), breakEnd: z.string().regex(/^\d{2}:\d{2}$/).optional() })).default([]) }).optional(),
 });
 
-export async function createStaff(clinicId: string, actorUserId: string, actorRole: RoleKey, input: z.infer<typeof staffInput>) {
+export async function createStaff(clinicId: string, actorUserId: string, actorRole: RoleKey, input: z.infer<typeof staffInput>, actorBranchId?: string | null) {
   if (!STAFF_ROLES.includes(input.role)) throw badRequest("Invalid staff role");
   // Only owners can create other owners/managers.
   if (["CLINIC_OWNER", "BRANCH_MANAGER"].includes(input.role) && actorRole !== "CLINIC_OWNER") throw forbidden("Only the clinic owner can create owners or managers");
+  // Branch-pinned actors (e.g. branch managers) can only create staff and schedules in their own branch.
+  if (actorBranchId) {
+    if (input.branchId !== actorBranchId) throw forbidden("You can only create staff in your own branch");
+    for (const s of input.doctor?.schedules ?? []) if (s.branchId !== actorBranchId) throw forbidden("You can only schedule doctors in your own branch");
+  }
   if (input.role === "DOCTOR") { if (!input.doctor) throw badRequest("Doctor profile is required"); await enforcePlanLimit(clinicId, "doctors"); }
   if (input.branchId && !(await db.branch.findFirst({ where: { id: input.branchId, clinicId } }))) throw notFound("Branch");
   const specialty = input.doctor ? await db.specialty.findFirst({ where: { id: input.doctor.specialtyId, clinicId } }) : null;
@@ -47,10 +52,14 @@ export async function createStaff(clinicId: string, actorUserId: string, actorRo
   });
 }
 
-export async function setStaffStatus(clinicId: string, actorUserId: string, targetUserId: string, status: "ACTIVE" | "SUSPENDED") {
+export async function setStaffStatus(clinicId: string, actorUserId: string, targetUserId: string, status: "ACTIVE" | "SUSPENDED", actorRole: RoleKey, actorBranchId?: string | null) {
   if (targetUserId === actorUserId) throw badRequest("You cannot change your own account status");
-  const m = await db.membership.findFirst({ where: { userId: targetUserId, clinicId } });
+  const m = await db.membership.findFirst({ where: { userId: targetUserId, clinicId }, include: { role: true } });
   if (!m) throw notFound("Staff member");
+  // Only owners can suspend/reactivate owners or managers.
+  if (["CLINIC_OWNER", "BRANCH_MANAGER"].includes(m.role.key) && actorRole !== "CLINIC_OWNER") throw forbidden("Only the clinic owner can change an owner or manager status");
+  // Branch-pinned actors can only touch staff pinned to their own branch.
+  if (actorBranchId && m.branchId !== actorBranchId) throw forbidden("Outside your branch");
   await db.$transaction(async (tx) => {
     await tx.user.update({ where: { id: targetUserId }, data: { status } });
     if (status === "SUSPENDED") await tx.session.deleteMany({ where: { userId: targetUserId } });

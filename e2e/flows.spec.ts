@@ -46,7 +46,7 @@ test("accountant adds an expense", async ({ page }) => {
   await page.getByLabel("Description").fill(desc);
   await page.getByLabel("Amount").fill("125.50");
   await page.getByRole("button", { name: "Add expense" }).click();
-  await expect(page.getByText(desc)).toBeVisible();
+  await expect(page.getByRole("cell", { name: desc })).toBeVisible();
 });
 
 test("owner adds staff and saves settings", async ({ page }) => {
@@ -60,7 +60,7 @@ test("owner adds staff and saves settings", async ({ page }) => {
   await staffForm.getByLabel("Temporary password").fill("TempPass#2026");
   await staffForm.getByLabel("Role").selectOption("NURSE");
   await staffForm.getByRole("button", { name: "Add staff" }).click();
-  await expect(page.getByText(email)).toBeVisible();
+  await expect(page.getByRole("cell", { name: email })).toBeVisible();
   await page.goto("/admin/settings");
   await page.getByRole("button", { name: "Save settings" }).click();
   await expect(page.getByRole("status")).toContainText("Settings saved");
@@ -157,7 +157,7 @@ test("owner switches calendar views", async ({ page }) => {
   await page.getByRole("link", { name: "month", exact: true }).click();
   await expect(page.getByText("Sun", { exact: true })).toBeVisible();
   await page.getByRole("link", { name: "day", exact: true }).click();
-  await expect(page.getByRole("columnheader", { name: "Patient" }).or(page.getByText("No appointments on this day"))).toBeVisible();
+  await expect(page.getByText("No appointments on this day").or(page.getByText(/^\d{2}:\d{2}$/).first())).toBeVisible();
 });
 
 test("owner receives stock and sees it in the table", async ({ page }) => {
@@ -175,7 +175,15 @@ test("prescription prints for the patient who owns it and is hidden from others"
   const db = new PrismaClient();
   const usr = await db.user.findUniqueOrThrow({ where: { email: "patient@nile.medora.test" } });
   const pat = await db.patient.findFirstOrThrow({ where: { userId: usr.id } });
-  const cons = await db.consultation.findFirstOrThrow({ where: { patientId: pat.id } });
+  // Seed appointment draws are date-dependent, so the portal patient may have no consultation on a given day: create one when missing.
+  let cons = await db.consultation.findFirst({ where: { patientId: pat.id } });
+  if (!cons) {
+    const doc = await db.doctor.findFirstOrThrow({ where: { clinicId: pat.clinicId } });
+    const branch = await db.branch.findFirstOrThrow({ where: { clinicId: pat.clinicId } });
+    const start = new Date(Date.now() - 3600_000);
+    const appt = await db.appointment.create({ data: { clinicId: pat.clinicId, branchId: branch.id, doctorId: doc.id, patientId: pat.id, reference: "E2E-RXSETUP-" + Date.now(), startsAt: start, endsAt: new Date(), status: "COMPLETED" } });
+    cons = await db.consultation.create({ data: { appointmentId: appt.id, clinicId: pat.clinicId, patientId: pat.id, doctorId: doc.id, diagnosis: "E2E setup consultation", completedAt: new Date() } });
+  }
   const rx = await db.prescription.create({ data: { clinicId: cons.clinicId, consultationId: cons.id, patientId: pat.id, doctorId: cons.doctorId, number: "RX-E2E-" + Date.now(), items: { create: [{ medication: "Paracetamol", dosage: "500 mg", frequency: "Twice daily", duration: "3 days" }] } } });
   await db.$disconnect();
   await login(page, usr.email);
@@ -220,7 +228,7 @@ test("owner adds a doctor with working days", async ({ page }) => {
   await form.getByLabel("Consultation fee").fill("300");
   await form.getByRole("button", { name: "Add doctor" }).click();
   await expect(page.getByRole("status")).toContainText("Doctor added");
-  await expect(page.getByText(email)).toBeVisible();
+  await expect(page.getByRole("cell", { name: email })).toBeVisible();
 });
 test("receptionist edits a patient's phone", async ({ page }) => {
   await login(page, "reception@nile.medora.test");
@@ -259,11 +267,22 @@ test("owner creates a purchase order and receives it", async ({ page }) => {
   await expect(page.getByText("RECEIVED").first()).toBeVisible();
 });
 test("accountant closes the cash register", async ({ page }) => {
+  const { PrismaClient } = await import("@prisma/client");
+  const db = new PrismaClient();
   await login(page, "accountant@nile.medora.test");
   await page.waitForURL(/\/admin/);
   await page.goto("/admin/billing");
   await page.getByText("Close cash register").click();
-  await page.getByLabel("Counted cash").fill("0");
+  // A register exists only after a cash payment that day; seed draws are date-dependent, so ensure one for the selected branch.
+  const countedInput = page.getByLabel("Counted cash");
+  const branchId = await countedInput.locator('xpath=ancestor::form[1]//select[@name="branchId"]').inputValue();
+  const clinicRow = await db.clinic.findUniqueOrThrow({ where: { slug: "nile-care" } });
+  const today = new Intl.DateTimeFormat("en-CA", { timeZone: clinicRow.timezone }).format(new Date());
+  const bizDate = new Date(today + "T00:00:00.000Z");
+  if (!(await db.cashRegister.findFirst({ where: { branchId, businessDate: bizDate } })))
+    await db.cashRegister.create({ data: { clinicId: clinicRow.id, branchId, businessDate: bizDate, openingBalance: 0 } });
+  await db.$disconnect();
+  await countedInput.fill("0");
   page.once("dialog", (d) => d.accept());
   await page.getByRole("button", { name: "Close register" }).click();
   // A register can only be closed once a day: accept the first close or the guard message on reruns.

@@ -31,6 +31,7 @@ export async function createInvoice(args: {
     if (args.appointmentId) {
       const ap = await tx.appointment.findFirst({ where: { id: args.appointmentId, clinicId: args.clinicId, patientId: args.patientId } });
       if (!ap) throw notFound("Appointment");
+      if (ap.branchId !== args.branchId) throw badRequest("Invoice branch must match the appointment branch");
       const existing = await tx.invoice.findUnique({ where: { appointmentId: args.appointmentId } });
       if (existing) throw conflict("INVOICE_EXISTS", "This appointment already has an invoice");
     }
@@ -62,7 +63,14 @@ export async function createInvoice(args: {
     await audit({ clinicId: clinic.id, userId: args.actorUserId, action: "invoice.create", entity: "Invoice", entityId: inv.id, metadata: { number, total: inv.total.toString() } }, tx);
     return inv;
   };
-  return outer ? run(outer) : db.$transaction(run);
+  try {
+    return outer ? await run(outer) : await db.$transaction(run);
+  } catch (e) {
+    // Two concurrent creates for the same appointment both pass the existence check; the unique index decides. Map it to a clean conflict.
+    if ((e as { code?: string }).code === "P2002" && args.appointmentId && String((e as { message?: string }).message ?? "").includes("appointmentId"))
+      throw conflict("INVOICE_EXISTS", "This appointment already has an invoice");
+    throw e;
+  }
 }
 
 export const outstandingOf = (inv: { total: Prisma.Decimal; paidAmount: Prisma.Decimal; refundedAmount: Prisma.Decimal; status: InvoiceStatus }) =>
@@ -98,6 +106,19 @@ export async function recordPayment(args: {
   if (!args.idempotencyKey || args.idempotencyKey.length < 8) throw badRequest("idempotencyKey is required (min 8 chars)");
   const amount = round2(D(args.amount));
   if (amount.lte(0)) throw badRequest("Payment amount must be greater than zero");
+  // A concurrent same-key request can win the unique constraint mid-transaction; Postgres then aborts
+  // the transaction, so retry the whole transaction once - the duplicate check at the top resolves it.
+  for (let attempt = 0; ; attempt++) {
+    try {
+      return await runPaymentTx();
+    } catch (e) {
+      if ((e as { code?: string }).code === "P2002" && attempt < 1) continue;
+      if ((e as { code?: string }).code === "P2002") throw conflict("IDEMPOTENCY_MISMATCH", "This idempotency key was already used for a different payment");
+      throw e;
+    }
+  }
+
+  async function runPaymentTx() {
   return db.$transaction(async (tx) => {
     const dup = await tx.payment.findUnique({ where: { clinicId_idempotencyKey: { clinicId: args.clinicId, idempotencyKey: args.idempotencyKey } } });
     if (dup) {
@@ -121,7 +142,9 @@ export async function recordPayment(args: {
         where: { branchId_businessDate: { branchId: inv.branchId, businessDate } },
         create: { clinicId: args.clinicId, branchId: inv.branchId, businessDate }, update: {},
       });
-      if (reg.closedAt) throw conflict("REGISTER_CLOSED", "Today's cash register is closed for this branch");
+      // Serialise with a concurrent register close: the row lock makes either the payment or the close win cleanly.
+      const regLocked = await tx.$queryRaw<{ id: string; closedAt: Date | null }[]>`SELECT id, "closedAt" FROM "CashRegister" WHERE id = ${reg.id} FOR UPDATE`;
+      if (regLocked[0]?.closedAt) throw conflict("REGISTER_CLOSED", "Today's cash register is closed for this branch");
       registerId = reg.id;
     }
     const payment = await tx.payment.create({
@@ -134,19 +157,35 @@ export async function recordPayment(args: {
     await audit({ clinicId: args.clinicId, userId: args.actorUserId, action: "payment.record", entity: "Payment", entityId: payment.id, metadata: { amount: amount.toString(), method: args.method, invoice: inv.number } }, tx);
     return { payment, duplicate: false };
   });
+  }
 }
 
-export async function refundPayment(args: { clinicId: string; paymentId: string; amount: string | number; reason: string; idempotencyKey: string; actorUserId?: string | null }) {
+export async function refundPayment(args: { clinicId: string; paymentId: string; amount: string | number; reason: string; idempotencyKey: string; actorUserId?: string | null; branchId?: string | null }) {
   const amount = round2(D(args.amount));
   if (amount.lte(0)) throw badRequest("Refund amount must be greater than zero");
   if (!args.reason.trim()) throw badRequest("A refund reason is required");
+  for (let attempt = 0; ; attempt++) {
+    try {
+      return await runRefundTx();
+    } catch (e) {
+      if ((e as { code?: string }).code === "P2002" && attempt < 1) continue;
+      if ((e as { code?: string }).code === "P2002") throw conflict("IDEMPOTENCY_MISMATCH", "This idempotency key was already used for a different refund");
+      throw e;
+    }
+  }
+
+  async function runRefundTx() {
   return db.$transaction(async (tx) => {
     const dup = await tx.refund.findUnique({ where: { clinicId_idempotencyKey: { clinicId: args.clinicId, idempotencyKey: args.idempotencyKey } } });
-    if (dup) return { refund: dup, duplicate: true };
+    if (dup) {
+      if (dup.paymentId !== args.paymentId || !dup.amount.eq(amount)) throw conflict("IDEMPOTENCY_MISMATCH", "This idempotency key was already used for a different refund");
+      return { refund: dup, duplicate: true };
+    }
     const p0 = await tx.payment.findFirst({ where: { id: args.paymentId, clinicId: args.clinicId } });
     if (!p0) throw notFound("Payment");
     await tx.$queryRaw`SELECT id FROM "Invoice" WHERE id = ${p0.invoiceId} FOR UPDATE`;
-    const payment = await tx.payment.findUniqueOrThrow({ where: { id: p0.id }, include: { refunds: true } });
+    const payment = await tx.payment.findUniqueOrThrow({ where: { id: p0.id }, include: { refunds: true, invoice: { select: { branchId: true } } } });
+    if (args.branchId && payment.invoice.branchId !== args.branchId) throw notFound("Payment");
     const already = payment.refunds.reduce((a, r) => a.add(r.amount), D(0));
     if (amount.gt(payment.amount.sub(already))) throw conflict("REFUND_EXCEEDS_PAYMENT", "Refund exceeds the refundable amount of this payment");
     const refund = await tx.refund.create({ data: { paymentId: payment.id, clinicId: args.clinicId, amount, reason: args.reason, idempotencyKey: args.idempotencyKey, createdById: args.actorUserId ?? null } });
@@ -157,6 +196,7 @@ export async function refundPayment(args: { clinicId: string; paymentId: string;
     await audit({ clinicId: args.clinicId, userId: args.actorUserId, action: "refund.create", entity: "Refund", entityId: refund.id, metadata: { amount: amount.toString(), payment: payment.receiptNumber } }, tx);
     return { refund, duplicate: false };
   });
+  }
 }
 
 export async function voidInvoice(args: { clinicId: string; invoiceId: string; actorUserId?: string | null }) {
@@ -173,15 +213,20 @@ export async function closeCashRegister(args: { clinicId: string; branchId: stri
   if (counted.isNegative()) throw badRequest("Counted cash cannot be negative");
   const clinic = await db.clinic.findUniqueOrThrow({ where: { id: args.clinicId }, select: { timezone: true } });
   const businessDate = new Date((args.date ?? clinicToday(clinic.timezone)) + "T00:00:00.000Z");
-  const reg = await db.cashRegister.findFirst({ where: { branchId: args.branchId, businessDate, clinicId: args.clinicId }, include: { payments: { include: { refunds: true } } } });
-  if (!reg) throw notFound("Cash register for that day");
-  if (reg.closedAt) throw conflict("REGISTER_CLOSED", "Register already closed");
-  const cashIn = reg.payments.reduce((a, p) => a.add(p.amount), D(0));
-  const cashOut = reg.payments.reduce((a, p) => a.add(p.refunds.reduce((x, r) => x.add(r.amount), D(0))), D(0));
-  const expected = reg.openingBalance.add(cashIn).sub(cashOut);
-  const closed = await db.cashRegister.update({ where: { id: reg.id }, data: { expectedCash: expected, countedCash: counted, closedAt: new Date(), closedById: args.actorUserId ?? null } });
-  await audit({ clinicId: args.clinicId, userId: args.actorUserId, action: "cash.close", entity: "CashRegister", entityId: reg.id, metadata: { expected: expected.toString(), counted: counted.toString() } });
-  return { register: closed, variance: counted.sub(expected) };
+  return db.$transaction(async (tx) => {
+    const reg = await tx.cashRegister.findFirst({ where: { branchId: args.branchId, businessDate, clinicId: args.clinicId } });
+    if (!reg) throw notFound("Cash register for that day");
+    // Lock the register row: a concurrent cash payment either lands before the close (and is counted) or is rejected after it.
+    const regLocked = await tx.$queryRaw<{ id: string; closedAt: Date | null }[]>`SELECT id, "closedAt" FROM "CashRegister" WHERE id = ${reg.id} FOR UPDATE`;
+    if (regLocked[0]?.closedAt) throw conflict("REGISTER_CLOSED", "Register already closed");
+    const payments = await tx.payment.findMany({ where: { cashRegisterId: reg.id }, include: { refunds: true } });
+    const cashIn = payments.reduce((a, p) => a.add(p.amount), D(0));
+    const cashOut = payments.reduce((a, p) => a.add(p.refunds.reduce((x, r) => x.add(r.amount), D(0))), D(0));
+    const expected = reg.openingBalance.add(cashIn).sub(cashOut);
+    const closed = await tx.cashRegister.update({ where: { id: reg.id }, data: { expectedCash: expected, countedCash: counted, closedAt: new Date(), closedById: args.actorUserId ?? null } });
+    await audit({ clinicId: args.clinicId, userId: args.actorUserId, action: "cash.close", entity: "CashRegister", entityId: reg.id, metadata: { expected: expected.toString(), counted: counted.toString() } }, tx);
+    return { register: closed, variance: counted.sub(expected) };
+  });
 }
 
 export async function createExpense(args: { clinicId: string; branchId?: string | null; categoryId: string; description: string; amount: string | number; incurredOn: string; actorUserId?: string | null }) {

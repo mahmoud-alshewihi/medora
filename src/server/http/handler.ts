@@ -18,7 +18,9 @@ function assertSameOrigin(req: Request) {
   const origin = req.headers.get("origin");
   if (!origin) return;
   const host = req.headers.get("x-forwarded-host") ?? req.headers.get("host");
-  if (new URL(origin).host !== host) throw new AppError(403, "CSRF", "Cross-origin request blocked");
+  let originHost: string;
+  try { originHost = new URL(origin).host; } catch { throw new AppError(403, "CSRF", "Cross-origin request blocked"); }
+  if (originHost !== host) throw new AppError(403, "CSRF", "Cross-origin request blocked");
 }
 
 export interface Ctx2 { req: Request; ctx: AccessContext & { clinicId: string }; params: Record<string, string>; url: URL }
@@ -64,4 +66,5 @@ export function rateLimit(key: string, max: number, windowMs: number) {
   buckets.set(key, hits);
   if (buckets.size > 5000) for (const [k, v] of buckets) if (!v.some((t) => now - t < windowMs)) buckets.delete(k);
 }
-export const clientIp = (req: Request) => req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "local";
+// The LAST x-forwarded-for hop is the one the trusted proxy appended; earlier hops are client-controlled.
+export const clientIp = (req: Request) => req.headers.get("x-forwarded-for")?.split(",").pop()?.trim() || "local";

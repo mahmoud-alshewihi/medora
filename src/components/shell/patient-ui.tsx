@@ -18,20 +18,17 @@ export function PatientEditForm({ p }: { p: P }) {
     } catch (x) { setErr(x instanceof Error ? x.message : "Failed"); } finally { setBusy(false); }
   }
   return (
-    <details className="rounded-lg border bg-card p-3">
-      <summary className="cursor-pointer text-sm font-medium"><T>Edit details</T></summary>
-      <form onSubmit={submit} className="mt-3 flex flex-wrap items-end gap-2">
-        <label className="text-xs"><T>Full name</T><Input name="fullName" defaultValue={p.fullName} required className="mt-1 w-48" /></label>
-        <label className="text-xs"><T>Gender</T><Select name="gender" defaultValue={p.gender ?? ""} className="mt-1 w-32"><option value="">-</option><option value="MALE"><T>Male</T></option><option value="FEMALE"><T>Female</T></option><option value="OTHER"><T>Other</T></option></Select></label>
-        <label className="text-xs"><T>Date of birth</T><Input name="dob" type="date" defaultValue={p.dateOfBirth ? String(p.dateOfBirth).slice(0, 10) : ""} className="mt-1 w-40" /></label>
-        <label className="text-xs"><T>Phone</T><Input name="phone" defaultValue={p.phone ?? ""} className="mt-1 w-40" /></label>
-        <label className="text-xs"><T>Email</T><Input name="email" type="email" defaultValue={p.email ?? ""} className="mt-1 w-52" /></label>
-        <label className="text-xs"><T>Address</T><Input name="address" defaultValue={p.address ?? ""} className="mt-1 w-64" /></label>
-        <Button type="submit" disabled={busy}>{busy ? <T>Saving...</T> : <T>Save changes</T>}</Button>
-        {ok && <p role="status" className="w-full text-sm text-green-700"><T>{ok}</T></p>}
-        {err && <p role="alert" className="w-full text-sm text-red-600"><T>{err}</T></p>}
-      </form>
-    </details>
+    <form onSubmit={submit} className="flex flex-wrap items-end gap-2">
+      <label className="text-xs"><T>Full name</T><Input name="fullName" defaultValue={p.fullName} required className="mt-1 w-48" /></label>
+      <label className="text-xs"><T>Gender</T><Select name="gender" defaultValue={p.gender ?? ""} className="mt-1 w-32"><option value="">-</option><option value="MALE"><T>Male</T></option><option value="FEMALE"><T>Female</T></option><option value="OTHER"><T>Other</T></option></Select></label>
+      <label className="text-xs"><T>Date of birth</T><Input name="dob" type="date" defaultValue={p.dateOfBirth ? String(p.dateOfBirth).slice(0, 10) : ""} className="mt-1 w-40" /></label>
+      <label className="text-xs"><T>Phone</T><Input name="phone" defaultValue={p.phone ?? ""} className="mt-1 w-40" /></label>
+      <label className="text-xs"><T>Email</T><Input name="email" type="email" defaultValue={p.email ?? ""} className="mt-1 w-52" /></label>
+      <label className="text-xs"><T>Address</T><Input name="address" defaultValue={p.address ?? ""} className="mt-1 w-64" /></label>
+      <Button type="submit" disabled={busy}>{busy ? <T>Saving...</T> : <T>Save changes</T>}</Button>
+      {ok && <p role="status" className="w-full text-sm text-green-700"><T>{ok}</T></p>}
+      {err && <p role="alert" className="w-full text-sm text-red-600"><T>{err}</T></p>}
+    </form>
   );
 }
 

@@ -1,10 +1,12 @@
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { notFound } from "@/lib/errors";
+import { assertBranchAllowed } from "@/server/auth/access";
 import { secured } from "@/server/http/handler";
 
 export const GET = secured("inventory.read", {}, async ({ ctx }) => db.purchaseOrder.findMany({ where: { clinicId: ctx.clinicId }, include: { supplier: true, lines: { include: { item: { select: { name: true } } } } }, orderBy: { createdAt: "desc" }, take: 100 }));
-export const POST = secured("inventory.manage", { body: z.object({ supplierId: z.string(), branchId: z.string(), lines: z.array(z.object({ itemId: z.string(), quantity: z.number().int().min(1), unitCost: z.union([z.string(), z.number()]), batchNumber: z.string().max(40).optional(), expiresOn: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional() })).min(1) }) }, async ({ ctx, body }) => {
+export const POST = secured("inventory.manage", { body: z.object({ supplierId: z.string(), branchId: z.string(), lines: z.array(z.object({ itemId: z.string(), quantity: z.number().int().min(1), unitCost: z.union([z.string(), z.number()]).refine((v) => Number.isFinite(Number(v)) && Number(v) >= 0, "Unit cost must be a non-negative number"), batchNumber: z.string().max(40).optional(), expiresOn: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional() })).min(1) }) }, async ({ ctx, body }) => {
+  assertBranchAllowed(ctx, body.branchId);
   const [s, b, items] = await Promise.all([db.supplier.findFirst({ where: { id: body.supplierId, clinicId: ctx.clinicId } }), db.branch.findFirst({ where: { id: body.branchId, clinicId: ctx.clinicId } }), db.inventoryItem.count({ where: { clinicId: ctx.clinicId, id: { in: body.lines.map((l) => l.itemId) } } })]);
   if (!s || !b || items !== new Set(body.lines.map((l) => l.itemId)).size) throw notFound("Supplier, branch or item");
   const n = await db.purchaseOrder.count({ where: { clinicId: ctx.clinicId } });

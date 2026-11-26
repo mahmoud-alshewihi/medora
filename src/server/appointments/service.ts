@@ -25,6 +25,10 @@ function mapDbConflict(e: unknown): never {
   if (msg.includes("appointment_doctor_no_overlap") || (e as { code?: string }).code === "P2010" || msg.includes("23P01")) {
     throw conflict("SLOT_TAKEN", "That time slot is no longer available");
   }
+  // Pool/lock saturation under booking bursts: fail with a clean retryable 503, never a raw 500.
+  if ((e as { code?: string }).code === "P2028" || msg.includes("Unable to start a transaction") || msg.includes("Transaction API error")) {
+    throw new AppError(503, "BOOKING_BUSY", "High booking volume right now, please try again");
+  }
   throw e;
 }
 
@@ -77,7 +81,7 @@ export async function bookAppointment(input: BookInput) {
           body: `Your appointment ${a.reference} on ${parts.date} ${parts.time} is ${status === "PENDING" ? "awaiting confirmation" : "confirmed"}.`, link: "/portal/appointments" }, tx);
       }
       return a;
-    }, { isolationLevel: Prisma.TransactionIsolationLevel.ReadCommitted, timeout: 15000 });
+    }, { isolationLevel: Prisma.TransactionIsolationLevel.ReadCommitted, timeout: 15000, maxWait: 10000 });
     return appt;
   } catch (e) {
     if (e instanceof AppError) throw e;
@@ -87,8 +91,10 @@ export async function bookAppointment(input: BookInput) {
 
 export async function changeStatus(args: {
   clinicId: string; appointmentId: string; to: AppointmentStatus; actorUserId?: string | null; note?: string; branchId?: string | null; patientUserId?: string;
-}) {
-  return db.$transaction(async (tx) => {
+}, outer?: Prisma.TransactionClient) {
+  const run = async (tx: Prisma.TransactionClient) => {
+    // Lock the row first: a concurrent transition waits, then re-reads the committed status, so conflicting updates can never both win.
+    await tx.$queryRaw`SELECT id FROM "Appointment" WHERE id = ${args.appointmentId} FOR UPDATE`;
     const a = await tx.appointment.findFirst({ where: { id: args.appointmentId, clinicId: args.clinicId }, include: { patient: true, doctor: true } });
     if (!a) throw notFound("Appointment");
     if (args.branchId && a.branchId !== args.branchId) throw notFound("Appointment");
@@ -124,7 +130,8 @@ export async function changeStatus(args: {
       await notify({ clinicId: args.clinicId, userIds: [a.patient.userId], type: "APPOINTMENT_CONFIRMED", title: "Appointment confirmed", body: `Your appointment ${a.reference} is confirmed.`, link: "/portal/appointments" }, tx);
     }
     return tx.appointment.findUniqueOrThrow({ where: { id: a.id } });
-  });
+  };
+  return outer ? run(outer) : db.$transaction(run);
 }
 
 export async function rescheduleAppointment(args: { clinicId: string; appointmentId: string; startsAt: Date; actorUserId?: string | null; branchId?: string | null; patientUserId?: string }) {

@@ -2,7 +2,8 @@
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useState } from "react";
 import { toast } from "sonner";
-import { Button, Card, Field, Input } from "@/components/ui/primitives";
+import { Button, Card, CardContent, Field, Input } from "@/components/ui/primitives";
+import { AuthShell } from "@/components/shell/auth-shell";
 import { authClient } from "@/lib/auth-client";
 import Link from "next/link";
 
@@ -19,18 +20,17 @@ function LoginForm() {
     router.push(me.data?.home ?? "/"); router.refresh();
   }
   return (
-    <main className="grid min-h-screen place-items-center p-4">
-      <Card className="w-full max-w-sm space-y-4 p-6">
-        <div><h1 className="text-xl font-semibold">Sign in to Medora</h1><p className="text-sm text-muted-foreground">Staff and patients use the same sign-in.</p></div>
-        {err ? <p role="alert" className="rounded bg-danger/10 p-2 text-sm text-danger">Access problem: {err.replace(/_/g, " ").toLowerCase()}</p> : null}
-        <form onSubmit={submit} className="space-y-3">
+    <AuthShell title="Sign in" subtitle="Staff and patients use the same sign-in.">
+      <Card><CardContent className="space-y-4 pt-5">
+        {err ? <p role="alert" className="rounded-md bg-danger-soft p-2.5 text-sm text-danger">Access problem: {err.replace(/_/g, " ").toLowerCase()}</p> : null}
+        <form onSubmit={submit} className="space-y-3.5">
           <Field label="Email" htmlFor="email"><Input id="email" type="email" autoComplete="username" required value={email} onChange={(e) => setEmail(e.target.value)} /></Field>
           <Field label="Password" htmlFor="password"><Input id="password" type="password" autoComplete="current-password" required value={password} onChange={(e) => setPassword(e.target.value)} /></Field>
-          <Button className="w-full" disabled={busy} type="submit">{busy ? "Signing in..." : "Sign in"}</Button>
+          <Button className="w-full" size="lg" disabled={busy} type="submit">{busy ? "Signing in..." : "Sign in"}</Button>
         </form>
-        <div className="flex justify-between text-sm"><Link className="text-primary" href="/forgot-password">Forgot password?</Link><Link className="text-primary" href="/register">Patient registration</Link></div>
-      </Card>
-    </main>
+        <div className="flex justify-between text-sm"><Link className="text-primary hover:underline" href="/forgot-password">Forgot password?</Link><Link className="text-primary hover:underline" href="/register">Patient registration</Link></div>
+      </CardContent></Card>
+    </AuthShell>
   );
 }
 export default function Page() { return <Suspense><LoginForm /></Suspense>; }

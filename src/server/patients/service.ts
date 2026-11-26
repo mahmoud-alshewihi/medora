@@ -16,8 +16,8 @@ async function nextMrn(tx: Prisma.TransactionClient, clinicId: string) {
 const dateOrNull = (s?: string | null) => (s ? new Date(s + "T00:00:00.000Z") : null);
 
 export async function registerPatient(clinicId: string, input: PatientInput, actorUserId?: string | null, linkUserId?: string | null) {
-  await enforcePlanLimit(clinicId, "patients");
   return db.$transaction(async (tx) => {
+    await enforcePlanLimit(clinicId, "patients", tx);
     const mrn = await nextMrn(tx, clinicId);
     const p = await tx.patient.create({
       data: { clinicId, mrn, fullName: input.fullName, gender: input.gender ?? null, dateOfBirth: dateOrNull(input.dateOfBirth), phone: input.phone ?? null, email: input.email ?? null,

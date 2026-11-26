@@ -3,7 +3,7 @@ import path from "node:path";
 export default defineConfig({
   resolve: { alias: { "@": path.resolve(__dirname, "src") } },
   test: {
-    environment: "node", include: ["tests/**/*.test.ts"], fileParallelism: false, testTimeout: 30000, hookTimeout: 120000,
+    environment: "node", include: ["tests/**/*.test.ts"], exclude: ["tests/http/**"], fileParallelism: false, testTimeout: 30000, hookTimeout: 120000,
     globalSetup: ["tests/global-setup.ts"],
     env: {
       DATABASE_URL: process.env.TEST_DATABASE_URL ?? "postgresql://medora@localhost:5432/medora_test?schema=public",

@@ -1,6 +1,6 @@
 import { Prisma, type StockMovementType } from "@prisma/client";
 import { db } from "@/lib/db";
-import { badRequest, conflict, notFound } from "@/lib/errors";
+import { badRequest, conflict, forbidden, notFound } from "@/lib/errors";
 import { audit } from "@/server/audit/audit";
 import { notify, staffWithPermission } from "@/server/notifications/service";
 
@@ -53,8 +53,9 @@ export async function receiveStock(args: { clinicId: string; itemId: string; bra
 }
 
 /** FEFO consumption: draws from earliest-expiring batches first; fails atomically if stock is insufficient. */
-export async function consumeStock(args: { clinicId: string; itemId: string; branchId: string; quantity: number; reason?: string; actorUserId?: string | null }) {
+export async function consumeStock(args: { clinicId: string; itemId: string; branchId: string; quantity: number; reason?: string; actorUserId?: string | null; actorBranchId?: string | null }) {
   if (!Number.isInteger(args.quantity) || args.quantity <= 0) throw badRequest("Quantity must be a positive integer");
+  if (args.actorBranchId && args.actorBranchId !== args.branchId) throw forbidden("Outside your branch");
   return db.$transaction(async (tx) => {
     const batches = await tx.inventoryBatch.findMany({ where: { itemId: args.itemId, branchId: args.branchId, quantity: { gt: 0 }, item: { clinicId: args.clinicId } }, orderBy: [{ expiresOn: { sort: "asc", nulls: "last" } }] });
     let left = args.quantity;
@@ -70,19 +71,22 @@ export async function consumeStock(args: { clinicId: string; itemId: string; bra
   });
 }
 
-export async function transferStock(args: { clinicId: string; batchId: string; toBranchId: string; quantity: number; actorUserId?: string | null }) {
+export async function transferStock(args: { clinicId: string; batchId: string; toBranchId: string; quantity: number; actorUserId?: string | null; actorBranchId?: string | null }) {
   if (!Number.isInteger(args.quantity) || args.quantity <= 0) throw badRequest("Quantity must be a positive integer");
   return db.$transaction(async (tx) => {
     const src = await tx.inventoryBatch.findFirst({ where: { id: args.batchId, item: { clinicId: args.clinicId } } });
     if (!src) throw notFound("Batch");
+    if (args.actorBranchId && src.branchId !== args.actorBranchId) throw forbidden("Outside your branch");
     if (src.branchId === args.toBranchId) throw badRequest("Source and destination branch are the same");
     const dest = await tx.branch.findFirst({ where: { id: args.toBranchId, clinicId: args.clinicId } });
     if (!dest) throw notFound("Destination branch");
-    await move(tx, { clinicId: args.clinicId, batchId: src.id, delta: -args.quantity, type: "TRANSFER_OUT", reason: `Transfer to ${dest.name}`, actorUserId: args.actorUserId });
     const target = await tx.inventoryBatch.upsert({
       where: { itemId_branchId_batchNumber: { itemId: src.itemId, branchId: dest.id, batchNumber: src.batchNumber } },
       create: { itemId: src.itemId, branchId: dest.id, batchNumber: src.batchNumber, expiresOn: src.expiresOn, quantity: 0 }, update: {},
     });
+    // Lock both batches in deterministic id order so opposite-direction transfers cannot deadlock.
+    await tx.$queryRaw`SELECT id FROM "InventoryBatch" WHERE id IN (${src.id}, ${target.id}) ORDER BY id FOR UPDATE`;
+    await move(tx, { clinicId: args.clinicId, batchId: src.id, delta: -args.quantity, type: "TRANSFER_OUT", reason: `Transfer to ${dest.name}`, actorUserId: args.actorUserId });
     await move(tx, { clinicId: args.clinicId, batchId: target.id, delta: args.quantity, type: "TRANSFER_IN", reason: "Transfer in", actorUserId: args.actorUserId });
     await audit({ clinicId: args.clinicId, userId: args.actorUserId, action: "inventory.transfer", entity: "InventoryBatch", entityId: src.id, metadata: { qty: args.quantity, to: dest.id } }, tx);
     return { from: src.id, to: target.id };
@@ -91,14 +95,18 @@ export async function transferStock(args: { clinicId: string; batchId: string; t
 
 export async function receivePurchaseOrder(args: { clinicId: string; orderId: string; actorUserId?: string | null }) {
   return db.$transaction(async (tx) => {
-    const po = await tx.purchaseOrder.findFirst({ where: { id: args.orderId, clinicId: args.clinicId }, include: { lines: true } });
-    if (!po) throw notFound("Purchase order");
-    if (po.status === "RECEIVED") throw conflict("PO_ALREADY_RECEIVED", "Purchase order already received");
-    if (po.status === "CANCELLED") throw conflict("PO_CANCELLED", "Purchase order was cancelled");
+    // Atomically claim the receipt: only one concurrent caller can flip ORDERED -> RECEIVED.
+    const claimed = await tx.$executeRaw`UPDATE "PurchaseOrder" SET status = 'RECEIVED', "receivedAt" = now() WHERE id = ${args.orderId} AND "clinicId" = ${args.clinicId} AND status = 'ORDERED'`;
+    if (claimed === 0) {
+      const po = await tx.purchaseOrder.findFirst({ where: { id: args.orderId, clinicId: args.clinicId } });
+      if (!po) throw notFound("Purchase order");
+      if (po.status === "RECEIVED") throw conflict("PO_ALREADY_RECEIVED", "Purchase order already received");
+      throw conflict("PO_CANCELLED", "Purchase order was cancelled");
+    }
+    const po = await tx.purchaseOrder.findUniqueOrThrow({ where: { id: args.orderId }, include: { lines: true } });
     for (const l of po.lines) {
       await receiveStock({ clinicId: args.clinicId, itemId: l.itemId, branchId: po.branchId, batchNumber: l.batchNumber ?? `PO-${po.number}`, expiresOn: l.expiresOn?.toISOString().slice(0, 10) ?? null, quantity: l.quantity, actorUserId: args.actorUserId, refId: po.id }, tx);
     }
-    await tx.purchaseOrder.update({ where: { id: po.id }, data: { status: "RECEIVED", receivedAt: new Date() } });
     await audit({ clinicId: args.clinicId, userId: args.actorUserId, action: "purchase_order.receive", entity: "PurchaseOrder", entityId: po.id }, tx);
     return po.id;
   });

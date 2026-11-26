@@ -175,7 +175,7 @@ async function main() {
     for (const n of ["Rent", "Salaries", "Utilities", "Medical supplies", "Marketing"]) cats.push(await db.expenseCategory.create({ data: { clinicId: clinic.id, name: n } }));
     const exps: Prisma.ExpenseCreateManyInput[] = [];
     for (const b of branches) for (let m = 0; m < 3; m++) for (const [ki, cat] of cats.entries()) {
-      const base = [18000, 60000, 5000, 9000, 3000][ki]!;
+      const base = [3000, 4200, 600, 1200, 400][ki]!;
       exps.push({ clinicId: clinic.id, branchId: b.id, categoryId: cat.id, description: `${cat.name} - month -${m}`, amount: String(base + int(0, 1500)), incurredOn: new Date(dayStr(-m * 28 - int(1, 10)) + "T00:00:00Z") });
     }
     await db.expense.createMany({ data: exps });

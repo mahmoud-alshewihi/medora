@@ -1,17 +1,25 @@
+import { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import { AppError, notFound } from "@/lib/errors";
 import { audit } from "@/server/audit/audit";
 
 export type Limit = "branches" | "doctors" | "patients";
+type Tx = Prisma.TransactionClient;
 
-/** Server-side subscription usage limit. Throws 402 when the clinic's plan is exhausted. */
-export async function enforcePlanLimit(clinicId: string, what: Limit) {
-  const sub = await db.subscription.findUnique({ where: { clinicId }, include: { plan: true } });
+/**
+ * Server-side subscription usage limit. Throws 402 when the clinic's plan is exhausted.
+ * When called inside a transaction, locks the Subscription row first so concurrent
+ * writers cannot collectively exceed the plan (TOCTOU fix).
+ */
+export async function enforcePlanLimit(clinicId: string, what: Limit, tx?: Tx) {
+  const client = tx ?? db;
+  if (tx) await tx.$queryRaw`SELECT id FROM "Subscription" WHERE "clinicId" = ${clinicId} FOR UPDATE`;
+  const sub = await client.subscription.findUnique({ where: { clinicId }, include: { plan: true } });
   if (!sub) throw new AppError(402, "SUBSCRIPTION_INACTIVE", "No active subscription");
   const [count, max] = await (async () => {
-    if (what === "branches") return [await db.branch.count({ where: { clinicId, active: true } }), sub.plan.maxBranches] as const;
-    if (what === "doctors") return [await db.doctor.count({ where: { clinicId, active: true } }), sub.plan.maxDoctors] as const;
-    return [await db.patient.count({ where: { clinicId } }), sub.plan.maxPatients] as const;
+    if (what === "branches") return [await client.branch.count({ where: { clinicId, active: true } }), sub.plan.maxBranches] as const;
+    if (what === "doctors") return [await client.doctor.count({ where: { clinicId, active: true } }), sub.plan.maxDoctors] as const;
+    return [await client.patient.count({ where: { clinicId } }), sub.plan.maxPatients] as const;
   })();
   if (count >= max) throw new AppError(402, "PLAN_LIMIT_REACHED", `Your plan allows at most ${max} ${what}`);
 }

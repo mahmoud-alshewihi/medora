@@ -99,8 +99,8 @@ export async function completeConsultation(ctx: Ctx, consultationId: string) {
   if (c.completedAt) throw conflict("CONSULTATION_COMPLETED", "Already completed");
   if (c.appointment.status !== "IN_PROGRESS") throw conflict("INVALID_TRANSITION", "Appointment is not in progress");
   if (!c.diagnosis?.trim()) throw badRequest("A diagnosis (clinician entered) is required to complete a consultation");
-  await changeStatus({ clinicId: ctx.clinicId, appointmentId: c.appointmentId, to: "COMPLETED", actorUserId: ctx.userId });
   return db.$transaction(async (tx) => {
+    await changeStatus({ clinicId: ctx.clinicId, appointmentId: c.appointmentId, to: "COMPLETED", actorUserId: ctx.userId }, tx);
     const done = await tx.consultation.update({ where: { id: c.id }, data: { completedAt: new Date() } });
     await tx.medicalRecord.create({ data: { patientId: c.patientId, clinicId: ctx.clinicId, kind: "DIAGNOSIS", title: c.diagnosis!.slice(0, 120), body: [c.diagnosis, c.treatmentPlan].filter(Boolean).join("\n\n"), authorDoctorId: doctor.id } });
     const existing = await tx.invoice.findUnique({ where: { appointmentId: c.appointmentId } });
